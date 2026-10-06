@@ -1,14 +1,15 @@
 const $ = (id) => document.getElementById(id);
 let data = null;
-const prev = new Map();
 
 const fmtTime = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
 
-function cell(label, key, id, v) {
+function cell(label, key, odds) {
+  const v = odds?.[key];
   if (v == null) return `<div><small>${label}</small><b>—</b></div>`;
-  const p = prev.get(`${id}:${key}`);
+  const p = odds.prev?.[key];
   const cls = p == null || p === v ? "" : v > p ? "up" : "down";
-  return `<div><small>${label}</small><b class="${cls}">${v.toFixed(2)}</b></div>`;
+  const arrow = cls === "up" ? "↑ " : cls === "down" ? "↓ " : "";
+  return `<div><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b></div>`;
 }
 
 function render() {
@@ -20,7 +21,7 @@ function render() {
     return `<h2>${l.name}</h2>` + ms.map((m) => `
       <div class="m">
         <div><div class="t">${m.home} × ${m.away}${m.live ? '<span class="live">AO VIVO</span>' : ""}</div><div class="when">${fmtTime(m.startTime)}</div></div>
-        <div class="o">${cell("1", "home", m.id, m.odds?.home)}${cell("X", "draw", m.id, m.odds?.draw)}${cell("2", "away", m.id, m.odds?.away)}</div>
+        <div class="o">${cell("1", "home", m.odds)}${cell("X", "draw", m.odds)}${cell("2", "away", m.odds)}</div>
       </div>`).join("");
   }).join("");
   $("list").innerHTML = html || "<p>Nenhum jogo encontrado.</p>";
@@ -31,7 +32,6 @@ async function load() {
     const next = await (await fetch("/api/odds")).json();
     data = next;
     render();
-    for (const l of next.leagues) for (const m of l.matches) for (const k of ["home", "draw", "away"]) prev.set(`${m.id}:${k}`, m.odds?.[k] ?? null);
     const b = $("banner");
     b.hidden = next.source !== "demo";
     if (!b.hidden) b.textContent = `Mostrando dados de DEMONSTRAÇÃO (não são odds reais). Motivo: ${next.error}`;
