@@ -2,7 +2,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchBetano } from "./providers/betano.js";
+import { fetchFlashscore } from "./providers/flashscore.js";
 import { fetchDemo } from "./providers/demo.js";
 
 const PORT = process.env.PORT || 3000;
@@ -14,9 +14,9 @@ let cache = { at: 0, body: null };
 
 async function getOdds() {
   if (cache.body && Date.now() - cache.at < TTL_MS) return cache.body;
-  let source = "betano", error = null, leagues;
+  let source = "flashscore", error = null, leagues;
   try {
-    leagues = await fetchBetano();
+    leagues = await fetchFlashscore();
   } catch (e) {
     source = "demo"; error = e.message;
     leagues = await fetchDemo();
