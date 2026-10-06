@@ -1,0 +1,8 @@
+{
+  "name": "odd",
+  "version": "0.1.0",
+  "description": "Espelho das odds de futebol (1X2) com provedor Betano configurável",
+  "type": "module",
+  "scripts": { "start": "node server.js", "test": "node --test" },
+  "engines": { "node": ">=18" }
+}
