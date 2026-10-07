@@ -33,8 +33,8 @@ function cell(label, key, m) {
   const arrow = cls === "up" ? "↑ " : cls === "down" ? "↓ " : "";
   const item = selected.get(m.id);
   const on = item?.picks.includes(key);
-  // Retorno (aposta × odd) nas odds que vão na mensagem: as escolhidas, ou as três se nenhuma foi escolhida.
-  const ret = stakeCents && item && (!item.picks.length || on) ? `<em class="ret">${formatBRL(payoutCents(stakeCents, v))}</em>` : "";
+  // Retorno (aposta × odd) só nas odds que você escolheu (clicou); marcar apenas o jogo não calcula nada.
+  const ret = stakeCents && on ? `<em class="ret">${formatBRL(payoutCents(stakeCents, v))}</em>` : "";
   return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" data-league="${esc(m.__league)}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b>${ret}</button>`;
 }
 

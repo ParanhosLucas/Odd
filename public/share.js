@@ -43,12 +43,13 @@ const when = (iso) =>
 // Odds que entram na mensagem para um item: as escolhidas (picks) ou, sem escolha, as três.
 const listedOutcomes = ({ picks }) => OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
 
-// Soma dos retornos de todas as odds listadas. Soma os valores já arredondados ao centavo,
-// para o total bater exatamente com as linhas "(retorno: ...)" da mensagem.
+// Soma dos retornos das odds ESCOLHIDAS (picks). Jogo marcado sem escolher odd não entra na soma.
+// Soma os valores já arredondados ao centavo, para o total bater com as linhas "(retorno: ...)".
 export function totalReturnCents(items, stakeCents) {
   if (!stakeCents) return 0;
   let total = 0;
   for (const it of items) {
+    if (!it.picks?.length) continue;
     for (const [k] of listedOutcomes(it)) {
       const v = it.match.odds?.[k];
       if (v != null) total += payoutCents(stakeCents, v);
@@ -71,8 +72,8 @@ export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
       const o = m.odds || {};
       const keys = listedOutcomes({ picks });
       lines.push(`${m.home} × ${m.away}${m.live ? (emojis ? " ⭕ AO VIVO" : " (AO VIVO)") : ""}`);
-      if (stakeCents) {
-        // Com valor de aposta: uma odd por linha, com o retorno de cada uma.
+      if (stakeCents && picks?.length) {
+        // Odds escolhidas + valor de aposta: uma odd por linha, com o retorno de cada uma.
         if (when(m.startTime)) lines.push(when(m.startTime));
         for (const [k, label] of keys) {
           const ret = o[k] == null ? "" : ` (retorno: ${formatBRL(payoutCents(stakeCents, o[k]))})`;
@@ -85,7 +86,8 @@ export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
   }
   if (stakeCents) {
     lines.push("", `*Valor da aposta*: ${formatBRL(stakeCents)}`);
-    lines.push(`*Retorno Total*: ${formatBRL(totalReturnCents(items, stakeCents))}`);
+    const total = totalReturnCents(items, stakeCents);
+    if (total) lines.push(`*Retorno Total*: ${formatBRL(total)}`);
   }
   return lines.join("\n");
 }
