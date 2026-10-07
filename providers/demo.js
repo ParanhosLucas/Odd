@@ -16,7 +16,6 @@ export async function fetchDemo() {
       id: `demo-${n}`,
       home, away,
       startTime: new Date(base + (++n) * 3600_000).toISOString(),
-      live: false,
       odds: { home: jitter(h), draw: jitter(d), away: jitter(a) },
     })),
   }));

@@ -71,7 +71,7 @@ export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
     for (const { match: m, picks } of matches) {
       const o = m.odds || {};
       const keys = listedOutcomes({ picks });
-      lines.push(`${m.home} × ${m.away}${m.live ? (emojis ? " ⭕ AO VIVO" : " (AO VIVO)") : ""}`);
+      lines.push(`${m.home} × ${m.away}`);
       if (stakeCents && picks?.length) {
         // Odds escolhidas + valor de aposta: uma odd por linha, com o retorno de cada uma.
         if (when(m.startTime)) lines.push(when(m.startTime));

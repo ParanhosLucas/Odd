@@ -1,6 +1,6 @@
 # Odd — odds de futebol (1X2)
 
-Espelha a aba **Odds** do Flashscore (futebol, bet365): jogos de hoje até +7 dias, com filtros Todos / Ao vivo / Próximos.
+Espelha a aba **Odds** do Flashscore (futebol, bet365): jogos que ainda não começaram, de hoje até +7 dias (jogos ao vivo não são exibidos).
 
 ## Rodar
 
@@ -24,7 +24,7 @@ Resposta de `/api/odds`:
 { "source": "flashscore", "stale": false, "error": null, "day": 0, "maxDay": 7,
   "updatedAt": "…",
   "leagues": [{ "name": "BRASIL: Brasileirão Série B", "matches": [
-    { "id": "…", "home": "…", "away": "…", "startTime": "ISO", "live": false,
+    { "id": "…", "home": "…", "away": "…", "startTime": "ISO",
       "odds": { "home": 1.66, "draw": 3.7, "away": 5, "prev": { "home": 1.96, "draw": 3.25, "away": 3.6 } } } ] }] }
 ```
 

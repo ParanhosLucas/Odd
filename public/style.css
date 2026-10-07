@@ -13,16 +13,14 @@ main{padding:0 0 40px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:20px 0 8px}
 .m{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .t{font-weight:600}.when{color:var(--mut);font-size:12px}
-.live{color:#fff;background:#d92d20;border-radius:4px;padding:1px 6px;font-size:11px;margin-left:6px}
 .o{display:flex;gap:6px}
 .o .odd{min-width:64px;text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 6px}
 .o small{display:block;color:var(--mut);font-size:11px}
 .o b{color:var(--acc);font-variant-numeric:tabular-nums}
 .o .up{color:#12b76a}.o .down{color:#f04438}
 @media(max-width:560px){.m{grid-template-columns:auto 1fr}.m .o{grid-column:1/-1}.o .odd{flex:1}}
-#filters{display:flex;gap:8px}#days{display:flex;gap:8px;align-items:center;margin-left:auto}
-nav button,#days button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
-nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#days{display:flex;gap:8px;align-items:center;margin-left:auto}
+#days button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
 #days button:disabled{opacity:.35;cursor:default}
 #dayLabel{min-width:96px;text-align:center;font-weight:600}
 .pick{display:flex;align-items:center;padding:6px;margin:-6px;cursor:pointer}
@@ -68,7 +66,6 @@ h2 .lh{display:flex;align-items:center;gap:8px;min-width:0}
 #leagueNote[hidden]{display:none}
 #leagueNote button{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:3px 10px;font:inherit;cursor:pointer}
 @media(min-width:860px){.layout{grid-template-columns:220px minmax(0,1fr);align-items:start}#side{position:sticky;top:12px}#side summary{pointer-events:none;cursor:default}#side summary::after{display:none}}
-.live{white-space:nowrap}
 #stakeBox{display:flex;align-items:center;gap:6px;font-weight:600}
 #stakeBox span{color:var(--mut);font-weight:400}
 #stake{width:96px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}

@@ -1,7 +1,7 @@
 // Provedor Flashscore: lista de jogos de futebol do dia (feed público do site).
 // Formato do feed: registros separados por "~", campos "CHAVE÷valor" separados por "¬".
 //   ZA = campeonato (ZL = caminho estável, ZY = país) | AA = id do jogo | AD = início (epoch s) | AE/AF = mandante/visitante
-//   AB = status (1 agendado, 2 ao vivo, 3 encerrado)
+//   AB = status (1 agendado, 2 ao vivo, 3 encerrado) — só o 1 é usado: jogos ao vivo não são exibidos
 // Odds 1X2 vêm de outro feed (fo_...): XA/XB/XC = odds atuais (casa/empate/fora),
 // YA/YB/YC = odds anteriores, ODA = casa de apostas (16 = bet365).
 
@@ -21,12 +21,11 @@ export function parseFeed(text) {
     if (f.ZA) {
       cur = { id: f.ZL || f.ZA, country: f.ZY || null, name: f.ZA, matches: [] };
       leagues.push(cur);
-    } else if (f.AA && cur && (f.AB === "1" || f.AB === "2")) {
+    } else if (f.AA && cur && f.AB === "1") { // só jogos que ainda não começaram
       cur.matches.push({
         id: f.AA,
         home: f.AE, away: f.AF,
         startTime: new Date(Number(f.AD) * 1000).toISOString(),
-        live: f.AB === "2",
         odds: null,
       });
     }
@@ -54,7 +53,7 @@ const get = async (path) => {
   return res.text();
 };
 
-// Espelha a aba "Odds": só jogos agendados/ao vivo que têm odds 1X2.
+// Espelha a aba "Odds": só jogos ainda não iniciados que têm odds 1X2.
 export async function fetchFlashscore(dayOffset = 0) {
   const [games, odds] = await Promise.all([
     get(`f_1_${dayOffset}_-3_pt-br_1`),

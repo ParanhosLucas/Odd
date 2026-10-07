@@ -3,7 +3,7 @@ import { COUNTRY_FLAG } from "/countries.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
 const $ = (id) => document.getElementById(id);
-let data = null, day = 0, filter = "all";
+let data = null, day = 0;
 
 let pinned = loadPinned(localStorage);   // ligas fixadas: [{ id, title, country }]
 let leagueFilter = null;                 // id da liga escolhida no menu (ou null = todas)
@@ -61,13 +61,13 @@ function render() {
   const q = $("q").value.trim().toLowerCase();
   const html = data.leagues.map((l) => {
     if (leagueFilter && leagueId(l) !== leagueFilter) return "";
-    const ms = l.matches.map((m) => ({ ...m, __league: l.name })).filter((m) => (filter === "all" || (filter === "live") === m.live) && (!q || `${l.name} ${m.home} ${m.away}`.toLowerCase().includes(q)));
+    const ms = l.matches.map((m) => ({ ...m, __league: l.name })).filter((m) => !q || `${l.name} ${m.home} ${m.away}`.toLowerCase().includes(q));
     if (!ms.length) return "";
     const pin = toPinned(l), isPinned = pinned.some((p) => p.id === pin.id);
     return `<h2><span class="lh">${flag(l.country)}<span>${esc(l.name)}</span></span><button type="button" class="pin${isPinned ? " on" : ""}" data-pin="${esc(pin.id)}" data-title="${esc(pin.title)}" data-country="${esc(pin.country || "")}" aria-pressed="${isPinned}" title="${isPinned ? "Desafixar liga" : "Fixar liga"}">${PIN_SVG}</button></h2>` + ms.map((m) => `
       <div class="m${selected.has(m.id) ? " sel" : ""}">
         <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}" data-league="${esc(l.name)}"${selected.has(m.id) ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
-        <div><div class="t">${esc(m.home)} × ${esc(m.away)}${m.live ? '<span class="live">AO VIVO</span>' : ""}</div><div class="when">${fmtTime(m.startTime)}</div></div>
+        <div><div class="t">${esc(m.home)} × ${esc(m.away)}</div><div class="when">${fmtTime(m.startTime)}</div></div>
         <div class="o">${cell("Casa", "home", m)}${cell("Empate", "draw", m)}${cell("Fora", "away", m)}</div>
       </div>`).join("");
   }).join("");
@@ -116,6 +116,17 @@ function toggle(input) {
   render();
 }
 
+// Jogo selecionado que já começou e saiu da lista (ao vivo/encerrado, não exibidos) é removido da seleção;
+// senão ficaria "preso" na barra sem como desmarcar.
+function purgeStarted(leagues) {
+  const present = new Set(leagues.flatMap((l) => l.matches.map((m) => m.id)));
+  let changed = false;
+  for (const [id, it] of selected) {
+    if (!present.has(id) && Date.parse(it.match.startTime) <= Date.now()) { selected.delete(id); changed = true; }
+  }
+  if (changed) persist();
+}
+
 // Mantém os jogos selecionados atualizados com as odds mais recentes.
 function refreshSelected(leagues) {
   for (const l of leagues) for (const m of l.matches) if (selected.has(m.id)) selected.set(m.id, { league: l.name, match: m, picks: selected.get(m.id).picks });
@@ -148,6 +159,7 @@ async function load() {
     const next = await res.json();
     if (next.day !== day) return; // resposta de um dia que já não está selecionado
     data = next;
+    purgeStarted(next.leagues);
     refreshSelected(next.leagues);
     render();
     updateDays();
@@ -226,13 +238,6 @@ $("copy").onclick = async () => {
 };
 $("prev").onclick = () => setDay(day - 1);
 $("next").onclick = () => setDay(day + 1);
-$("filters").addEventListener("click", (e) => {
-  const f = e.target.dataset.f;
-  if (!f) return;
-  filter = f;
-  document.querySelectorAll("#filters button").forEach((b) => b.classList.toggle("on", b === e.target));
-  render();
-});
 updateDays();
 load();
 setInterval(load, 30_000);
