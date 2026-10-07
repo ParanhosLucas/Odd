@@ -74,3 +74,5 @@ h2 .lh{display:flex;align-items:center;gap:8px;min-width:0}
 button.odd.on .ret{color:#04210f}
 #total{font-size:14px}#total b{color:#12b76a;font-size:16px}
 #total[hidden]{display:none}
+#reg{font-size:14px;color:var(--mut)}#reg b{color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+#reg[hidden]{display:none}

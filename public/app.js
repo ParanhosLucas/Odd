@@ -1,5 +1,6 @@
 import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
+import { register, currentRegistration, slipKey } from "/register.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
 const $ = (id) => document.getElementById(id);
@@ -83,6 +84,10 @@ function updateBar(note) {
   const total = stakeCents ? totalReturnCents([...selected.values()], stakeCents) : 0;
   $("total").hidden = !total;
   $("total").innerHTML = total ? `Retorno Total: <b>${formatBRL(total)}</b>` : "";
+  // Mostra o registro enquanto o cupom for o mesmo que foi enviado/copiado; mudou algo, some.
+  const reg = n ? currentRegistration(localStorage, slipKey([...selected.values()], stakeCents)) : null;
+  $("reg").hidden = !reg;
+  $("reg").innerHTML = reg ? `Registro: <b>${reg}</b>` : "";
 }
 
 // Seleciona o jogo (se ainda não estiver) e devolve o item; null se estourou o limite.
@@ -216,24 +221,30 @@ try { $("stake").value = localStorage.getItem(STAKE_KEY) || ""; stakeCents = par
 
 $("send").onclick = () => {
   if (!selected.size) return;
+  const items = [...selected.values()];
   // Sem emojis: a página wa.me do WhatsApp os exibe como "�". Para ter emojis, use "Copiar mensagem".
-  const url = whatsappUrl(buildMessage([...selected.values()], { emojis: false, stakeCents }));
-  if (url.length > MAX_LINK_LENGTH) {
+  const options = { emojis: false, stakeCents };
+  // Confere o tamanho ANTES de registrar, para não gastar um número numa mensagem que não foi enviada.
+  if (whatsappUrl(buildMessage(items, { ...options, registration: "000000-0000" })).length > MAX_LINK_LENGTH) {
     updateBar("Mensagem grande demais para o link: use “Copiar mensagem” ou selecione menos jogos.");
     return void setTimeout(() => updateBar(), 5000);
   }
-  window.open(url, "_blank", "noopener");
+  const number = register(localStorage, slipKey(items, stakeCents));
+  window.open(whatsappUrl(buildMessage(items, { ...options, registration: number })), "_blank", "noopener");
+  updateBar();
 };
 $("copy").onclick = async () => {
   if (!selected.size) return;
-  const text = buildMessage([...selected.values()], { stakeCents });
+  const items = [...selected.values()];
+  const number = register(localStorage, slipKey(items, stakeCents));
+  const text = buildMessage(items, { stakeCents, registration: number });
   try {
     await navigator.clipboard.writeText(text);
   } catch {
     const ta = Object.assign(document.createElement("textarea"), { value: text });
     document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
   }
-  updateBar("Mensagem copiada! Cole no WhatsApp.");
+  updateBar(`Mensagem copiada (registro ${number})! Cole no WhatsApp.`);
   setTimeout(() => updateBar(), 2500);
 };
 $("prev").onclick = () => setDay(day - 1);

@@ -59,13 +59,14 @@ export function totalReturnCents(items, stakeCents) {
 }
 
 // items: [{ league, match, picks? }]; picks = subconjunto de ["home","draw","away"] (vazio/ausente = as três). Agrupa por campeonato; campeonatos e jogos em ordem de horário.
-export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
+export function buildMessage(items, { emojis = true, stakeCents = null, registration = null } = {}) {
   const byLeague = new Map();
   for (const it of [...items].sort((a, b) => String(a.match.startTime).localeCompare(String(b.match.startTime)))) {
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
   const lines = [emojis ? "⚡ *Odds Futebol*" : "*Odds Futebol*"];
+  if (registration) lines.push(`*Registro*: ${registration}`);
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {
