@@ -1,4 +1,4 @@
-import { buildMessage, whatsappUrl, MAX_SELECTED } from "/share.js";
+import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
@@ -15,6 +15,9 @@ const PIN_SVG = '<svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><pa
 const selected = new Map();
 const STORE = "odd.selected";
 try { for (const it of JSON.parse(localStorage.getItem(STORE) || "[]")) selected.set(it.match.id, { picks: [], ...it }); } catch {}
+// Valor da aposta (em centavos); o texto digitado fica guardado para reaparecer ao recarregar.
+const STAKE_KEY = "odd.stake";
+let stakeCents = null;
 const persist = () => { try { localStorage.setItem(STORE, JSON.stringify([...selected.values()])); } catch {} };
 
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -28,8 +31,11 @@ function cell(label, key, m) {
   const p = odds.prev?.[key];
   const cls = p == null || p === v ? "" : v > p ? "up" : "down";
   const arrow = cls === "up" ? "↑ " : cls === "down" ? "↓ " : "";
-  const on = selected.get(m.id)?.picks.includes(key);
-  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" data-league="${esc(m.__league)}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b></button>`;
+  const item = selected.get(m.id);
+  const on = item?.picks.includes(key);
+  // Retorno (aposta × odd) nas odds que vão na mensagem: as escolhidas, ou as três se nenhuma foi escolhida.
+  const ret = stakeCents && item && (!item.picks.length || on) ? `<em class="ret">${formatBRL(payoutCents(stakeCents, v))}</em>` : "";
+  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" data-league="${esc(m.__league)}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b>${ret}</button>`;
 }
 
 function flag(country) {
@@ -185,14 +191,27 @@ $("pinnedBox").open = wide.matches;
 wide.addEventListener("change", (e) => { $("pinnedBox").open = e.matches; });
 renderSide();
 $("clear").onclick = () => { selected.clear(); persist(); render(); };
+$("stake").addEventListener("input", (e) => {
+  stakeCents = parseStake(e.target.value);
+  e.target.classList.toggle("bad", e.target.value.trim() !== "" && stakeCents === null);
+  try { localStorage.setItem(STAKE_KEY, e.target.value); } catch {}
+  render();
+});
+try { $("stake").value = localStorage.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
+
 $("send").onclick = () => {
   if (!selected.size) return;
   // Sem emojis: a página wa.me do WhatsApp os exibe como "�". Para ter emojis, use "Copiar mensagem".
-  window.open(whatsappUrl(buildMessage([...selected.values()], { emojis: false })), "_blank", "noopener");
+  const url = whatsappUrl(buildMessage([...selected.values()], { emojis: false, stakeCents }));
+  if (url.length > MAX_LINK_LENGTH) {
+    updateBar("Mensagem grande demais para o link: use “Copiar mensagem” ou selecione menos jogos.");
+    return void setTimeout(() => updateBar(), 5000);
+  }
+  window.open(url, "_blank", "noopener");
 };
 $("copy").onclick = async () => {
   if (!selected.size) return;
-  const text = buildMessage([...selected.values()]);
+  const text = buildMessage([...selected.values()], { stakeCents });
   try {
     await navigator.clipboard.writeText(text);
   } catch {

@@ -69,3 +69,9 @@ h2 .lh{display:flex;align-items:center;gap:8px;min-width:0}
 #leagueNote button{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:3px 10px;font:inherit;cursor:pointer}
 @media(min-width:860px){.layout{grid-template-columns:220px minmax(0,1fr);align-items:start}#side{position:sticky;top:12px}#side summary{pointer-events:none;cursor:default}#side summary::after{display:none}}
 .live{white-space:nowrap}
+#stakeBox{display:flex;align-items:center;gap:6px;font-weight:600}
+#stakeBox span{color:var(--mut);font-weight:400}
+#stake{width:96px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+#stake.bad{border-color:#f04438}
+.ret{display:block;font-style:normal;font-size:10px;color:var(--mut);margin-top:1px;white-space:nowrap}
+button.odd.on .ret{color:#04210f}
