@@ -187,7 +187,20 @@ renderSide();
 $("clear").onclick = () => { selected.clear(); persist(); render(); };
 $("send").onclick = () => {
   if (!selected.size) return;
-  window.open(whatsappUrl(buildMessage([...selected.values()])), "_blank", "noopener");
+  // Sem emojis: a página wa.me do WhatsApp os exibe como "�". Para ter emojis, use "Copiar mensagem".
+  window.open(whatsappUrl(buildMessage([...selected.values()], { emojis: false })), "_blank", "noopener");
+};
+$("copy").onclick = async () => {
+  if (!selected.size) return;
+  const text = buildMessage([...selected.values()]);
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = Object.assign(document.createElement("textarea"), { value: text });
+    document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  updateBar("Mensagem copiada! Cole no WhatsApp.");
+  setTimeout(() => updateBar(), 2500);
 };
 $("prev").onclick = () => setDay(day - 1);
 $("next").onclick = () => setDay(day + 1);

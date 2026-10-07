@@ -1,5 +1,6 @@
-// Emojis: só os do plano básico do Unicode (um único caractere, sem seletor de variação nem junção),
-// porque os de 4 bytes (ex.: círculo vermelho) chegam como "�" no WhatsApp Web via link wa.me.
+// Emojis: a página wa.me do WhatsApp mostra "�" no lugar de qualquer emoji que chega pelo link (mesmo
+// os simples). Por isso o link é enviado sem emojis ({ emojis: false }); a mensagem COM emojis serve
+// para o botão "Copiar mensagem", que cola o texto direto no WhatsApp sem passar pelo link.
 // Monta a mensagem de WhatsApp com os jogos selecionados e o link wa.me.
 export const MAX_SELECTED = 30; // mantém o link dentro de um tamanho seguro
 
@@ -15,19 +16,19 @@ const when = (iso) =>
     : "";
 
 // items: [{ league, match, picks? }]; picks = subconjunto de ["home","draw","away"] (vazio/ausente = as três). Agrupa por campeonato; campeonatos e jogos em ordem de horário.
-export function buildMessage(items) {
+export function buildMessage(items, { emojis = true } = {}) {
   const byLeague = new Map();
   for (const it of [...items].sort((a, b) => String(a.match.startTime).localeCompare(String(b.match.startTime)))) {
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
-  const lines = ["⚡ *Odds Futebol*"];
+  const lines = [emojis ? "⚡ *Odds Futebol*" : "*Odds Futebol*"];
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {
       const o = m.odds || {};
       const keys = OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
-      lines.push(`${m.home} × ${m.away}${m.live ? " ⭕ AO VIVO" : ""}`);
+      lines.push(`${m.home} × ${m.away}${m.live ? (emojis ? " ⭕ AO VIVO" : " (AO VIVO)") : ""}`);
       lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `*${label}*: ${odd(o[k])}`).join(" | ")}`);
     }
   }
