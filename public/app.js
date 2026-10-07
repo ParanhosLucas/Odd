@@ -34,19 +34,16 @@ function cell(label, key, m) {
 
 function flag(country) {
   const code = COUNTRY_FLAG[country];
-  return code ? `<img class="flag" src="/flags/${code}.svg" alt="" loading="lazy">` : '<span class="flag globe" aria-hidden="true">🌐</span>';
+  // Regiões (Europa, Mundo, América do Sul…) e países sem bandeira usam o ícone de mundo.
+  return `<img class="flag" src="/flags/${code || "world"}.svg" alt="" loading="lazy">`;
 }
 
 function renderSide() {
-  const counts = new Map((data?.leagues || []).map((l) => [leagueId(l), l.matches.length]));
   $("pinned").innerHTML = pinned.length
-    ? pinned.map((p) => {
-        const n = counts.get(p.id) || 0;
-        return `<li class="${leagueFilter === p.id ? "on" : ""}${data && !n ? " empty" : ""}">
-          <button type="button" class="lg" data-lg="${esc(p.id)}" aria-pressed="${leagueFilter === p.id}">${flag(p.country)}<span class="lg-name">${esc(p.title)}</span>${n ? `<span class="lg-n">${n}</span>` : ""}</button>
+    ? pinned.map((p) => `<li class="${leagueFilter === p.id ? "on" : ""}">
+          <button type="button" class="lg" data-lg="${esc(p.id)}" aria-pressed="${leagueFilter === p.id}" title="${esc(p.title)}">${flag(p.country)}<span class="lg-name">${esc(p.title)}</span></button>
           <button type="button" class="unpin" data-unpin="${esc(p.id)}" aria-label="Desafixar ${esc(p.title)}" title="Desafixar">×</button>
-        </li>`;
-      }).join("")
+        </li>`).join("")
     : '<li class="pin-empty">Nenhuma liga fixada. Use o alfinete ao lado do nome de uma liga.</li>';
   const note = $("leagueNote"), active = pinned.find((p) => p.id === leagueFilter);
   note.hidden = !active;

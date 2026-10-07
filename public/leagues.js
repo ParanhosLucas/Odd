@@ -3,8 +3,10 @@
 export const DEFAULT_PINNED = [
   { id: "/futebol/brasil/brasileirao-serie-a/", title: "Brasileirão Série A", country: "Brasil" },
   { id: "/futebol/brasil/brasileirao-serie-b/", title: "Brasileirão Série B", country: "Brasil" },
-  { id: "/futebol/brasil/paulista/", title: "Paulista", country: "Brasil" },
   { id: "/futebol/brasil/copa-do-brasil/", title: "Copa do Brasil", country: "Brasil" },
+  { id: "/futebol/america-do-sul/copa-america/", title: "Copa América", country: "América do Sul" },
+  { id: "/futebol/america-do-sul/copa-libertadores/", title: "Copa Libertadores", country: "América do Sul" },
+  { id: "/futebol/america-do-sul/copa-sul-americana/", title: "Copa Sul-Americana", country: "América do Sul" },
 ];
 
 const KEY = "odd.pinned";
