@@ -28,7 +28,7 @@ export function buildMessage(items) {
       const o = m.odds || {};
       const keys = OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
       lines.push(`${m.home} × ${m.away}${m.live ? " ⭕ AO VIVO" : ""}`);
-      lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `${label}: ${odd(o[k])}`).join(" | ")}`);
+      lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `*${label}*: ${odd(o[k])}`).join(" | ")}`);
     }
   }
   lines.push("", "*Odds mudam a qualquer momento*");
