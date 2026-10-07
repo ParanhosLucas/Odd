@@ -42,7 +42,11 @@ Resposta de `/api/odds`:
 docker build -t odd . && docker run -p 3000:3000 -e TRUST_PROXY=1 odd
 ```
 
-Em Render/Railway/Fly: use o Dockerfile (ou `node server.js`), defina `TRUST_PROXY=1` e `NODE_ENV=production`.
+**Render (grátis):** `render.yaml` já está pronto. Em render.com: *New → Blueprint* → escolha este repositório → *Apply*.
+O plano grátis "dorme" após ~15 min sem acesso (o primeiro acesso depois disso demora ~30 s).
+Se o Flashscore bloquear o IP do provedor, `/api/odds` devolve `502` — veja os logs do serviço.
+
+Em Railway/Fly: use o Dockerfile (ou `node server.js`), defina `TRUST_PROXY=1` e `NODE_ENV=production`.
 O rate limit e o cache ficam em memória: use **uma instância** (ou adicione Redis para escalar).
 
 ## Aviso importante

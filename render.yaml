@@ -1,0 +1,13 @@
+# Blueprint do Render: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: odd
+    runtime: docker
+    plan: free
+    branch: claude/betano-odds-mirror-football-ijkq09
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
