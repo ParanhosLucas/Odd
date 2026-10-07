@@ -10,7 +10,7 @@ h1{font-size:20px;margin:0;flex:1 1 100%}
 @media(min-width:932px){#banner{margin:0 auto 12px}}
 main{max-width:900px;margin:auto;padding:0 16px 40px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:20px 0 8px}
-.m{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.m{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .t{font-weight:600}.when{color:var(--mut);font-size:12px}
 .live{color:#fff;background:#d92d20;border-radius:4px;padding:1px 6px;font-size:11px;margin-left:6px}
 .o{display:flex;gap:6px}
@@ -18,9 +18,18 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)
 .o small{display:block;color:var(--mut);font-size:11px}
 .o b{color:var(--acc);font-variant-numeric:tabular-nums}
 .o .up{color:#12b76a}.o .down{color:#f04438}
-@media(max-width:560px){.m{grid-template-columns:1fr}.o div{flex:1}}
+@media(max-width:560px){.m{grid-template-columns:auto 1fr}.m .o{grid-column:1/-1}.o div{flex:1}}
 #filters{display:flex;gap:8px}#days{display:flex;gap:8px;align-items:center;margin-left:auto}
 nav button,#days button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
 nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #days button:disabled{opacity:.35;cursor:default}
 #dayLabel{min-width:96px;text-align:center;font-weight:600}
+.pick{display:flex;align-items:center;padding:6px;margin:-6px;cursor:pointer}
+.pick input{width:20px;height:20px;accent-color:#25d366;cursor:pointer}
+.m.sel{border-color:#25d366;box-shadow:0 0 0 1px #25d366 inset}
+main{padding-bottom:90px}
+#bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px 16px;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.18)}
+#bar[hidden]{display:none}
+#count{font-weight:600}
+#clear,#send{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:9px 16px;font:inherit;cursor:pointer}
+#send{background:#25d366;border-color:#25d366;color:#04210f;font-weight:700}
