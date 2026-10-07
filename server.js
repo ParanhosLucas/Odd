@@ -10,25 +10,29 @@ const TTL_MS = 30_000;
 const PUBLIC = join(fileURLToPath(new URL(".", import.meta.url)), "public");
 const TYPES = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" };
 
-let cache = { at: 0, body: null };
+const MAX_DAY = 7;
+const cache = new Map(); // dia -> { at, body }
 
-async function getOdds() {
-  if (cache.body && Date.now() - cache.at < TTL_MS) return cache.body;
+async function getOdds(day) {
+  const hit = cache.get(day);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.body;
   let source = "flashscore", error = null, leagues;
   try {
-    leagues = await fetchFlashscore();
+    leagues = await fetchFlashscore(day);
   } catch (e) {
     source = "demo"; error = e.message;
     leagues = await fetchDemo();
   }
-  cache = { at: Date.now(), body: { source, error, updatedAt: new Date().toISOString(), leagues } };
-  return cache.body;
+  const body = { source, error, day, maxDay: MAX_DAY, updatedAt: new Date().toISOString(), leagues };
+  cache.set(day, { at: Date.now(), body });
+  return body;
 }
 
 http.createServer(async (req, res) => {
-  const { pathname } = new URL(req.url, "http://x");
+  const { pathname, searchParams } = new URL(req.url, "http://x");
   if (pathname === "/api/odds") {
-    const body = await getOdds();
+    const day = Math.min(MAX_DAY, Math.max(0, parseInt(searchParams.get("day"), 10) || 0));
+    const body = await getOdds(day);
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(body));
   }

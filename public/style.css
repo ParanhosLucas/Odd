@@ -19,3 +19,8 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)
 .o b{color:var(--acc);font-variant-numeric:tabular-nums}
 .o .up{color:#12b76a}.o .down{color:#f04438}
 @media(max-width:560px){.m{grid-template-columns:1fr}.o div{flex:1}}
+#filters{display:flex;gap:8px}#days{display:flex;gap:8px;align-items:center;margin-left:auto}
+nav button,#days button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#days button:disabled{opacity:.35;cursor:default}
+#dayLabel{min-width:96px;text-align:center;font-weight:600}
