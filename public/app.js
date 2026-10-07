@@ -1,4 +1,4 @@
-import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
+import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
@@ -80,6 +80,9 @@ function updateBar(note) {
   const n = selected.size;
   $("bar").hidden = n === 0;
   $("count").textContent = note || `${n} jogo${n === 1 ? "" : "s"} selecionado${n === 1 ? "" : "s"}`;
+  const total = stakeCents ? totalReturnCents([...selected.values()], stakeCents) : 0;
+  $("total").hidden = !total;
+  $("total").innerHTML = total ? `Retorno Total: <b>${formatBRL(total)}</b>` : "";
 }
 
 // Seleciona o jogo (se ainda não estiver) e devolve o item; null se estourou o limite.

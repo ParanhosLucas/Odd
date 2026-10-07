@@ -40,6 +40,23 @@ const when = (iso) =>
       })
     : "";
 
+// Odds que entram na mensagem para um item: as escolhidas (picks) ou, sem escolha, as três.
+const listedOutcomes = ({ picks }) => OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
+
+// Soma dos retornos de todas as odds listadas. Soma os valores já arredondados ao centavo,
+// para o total bater exatamente com as linhas "(retorno: ...)" da mensagem.
+export function totalReturnCents(items, stakeCents) {
+  if (!stakeCents) return 0;
+  let total = 0;
+  for (const it of items) {
+    for (const [k] of listedOutcomes(it)) {
+      const v = it.match.odds?.[k];
+      if (v != null) total += payoutCents(stakeCents, v);
+    }
+  }
+  return total;
+}
+
 // items: [{ league, match, picks? }]; picks = subconjunto de ["home","draw","away"] (vazio/ausente = as três). Agrupa por campeonato; campeonatos e jogos em ordem de horário.
 export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
   const byLeague = new Map();
@@ -52,7 +69,7 @@ export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {
       const o = m.odds || {};
-      const keys = OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
+      const keys = listedOutcomes({ picks });
       lines.push(`${m.home} × ${m.away}${m.live ? (emojis ? " ⭕ AO VIVO" : " (AO VIVO)") : ""}`);
       if (stakeCents) {
         // Com valor de aposta: uma odd por linha, com o retorno de cada uma.
@@ -66,7 +83,10 @@ export function buildMessage(items, { emojis = true, stakeCents = null } = {}) {
       }
     }
   }
-  if (stakeCents) lines.push("", `*Valor da aposta*: ${formatBRL(stakeCents)}`);
+  if (stakeCents) {
+    lines.push("", `*Valor da aposta*: ${formatBRL(stakeCents)}`);
+    lines.push(`*Retorno Total*: ${formatBRL(totalReturnCents(items, stakeCents))}`);
+  }
   return lines.join("\n");
 }
 
