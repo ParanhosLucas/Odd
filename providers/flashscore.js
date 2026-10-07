@@ -1,6 +1,6 @@
 // Provedor Flashscore: lista de jogos de futebol do dia (feed público do site).
 // Formato do feed: registros separados por "~", campos "CHAVE÷valor" separados por "¬".
-//   ZA = campeonato | AA = id do jogo | AD = início (epoch s) | AE/AF = mandante/visitante
+//   ZA = campeonato (ZL = caminho estável, ZY = país) | AA = id do jogo | AD = início (epoch s) | AE/AF = mandante/visitante
 //   AB = status (1 agendado, 2 ao vivo, 3 encerrado)
 // Odds 1X2 vêm de outro feed (fo_...): XA/XB/XC = odds atuais (casa/empate/fora),
 // YA/YB/YC = odds anteriores, ODA = casa de apostas (16 = bet365).
@@ -19,7 +19,7 @@ export function parseFeed(text) {
   for (const rec of text.split("~")) {
     const f = fields(rec);
     if (f.ZA) {
-      cur = { name: f.ZA, matches: [] };
+      cur = { id: f.ZL || f.ZA, country: f.ZY || null, name: f.ZA, matches: [] };
       leagues.push(cur);
     } else if (f.AA && cur && (f.AB === "1" || f.AB === "2")) {
       cur.matches.push({

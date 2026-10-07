@@ -1,7 +1,14 @@
 import { buildMessage, whatsappUrl, MAX_SELECTED } from "/share.js";
+import { COUNTRY_FLAG } from "/countries.js";
+import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
 const $ = (id) => document.getElementById(id);
 let data = null, day = 0, filter = "all";
+
+let pinned = loadPinned(localStorage);   // ligas fixadas: [{ id, title, country }]
+let leagueFilter = null;                 // id da liga escolhida no menu (ou null = todas)
+
+const PIN_SVG = '<svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 1.2 14.8 6.2 13.4 7.6l-1-.4-2.3 2.3.2 2.6-1.1 1.1-2.6-2.6-3.9 3.9-.7-.7 3.9-3.9L2.3 7.3l1.1-1.1 2.6.2 2.3-2.3-.4-1z"/></svg>';
 
 // Jogos selecionados: id -> { league, match, picks }. Guarda o jogo inteiro para sobreviver à troca de dia;
 // picks = odds escolhidas ("home"/"draw"/"away"); vazio = as três vão na mensagem.
@@ -25,13 +32,36 @@ function cell(label, key, m) {
   return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" data-league="${esc(m.__league)}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b></button>`;
 }
 
+function flag(country) {
+  const code = COUNTRY_FLAG[country];
+  return code ? `<img class="flag" src="/flags/${code}.svg" alt="" loading="lazy">` : '<span class="flag globe" aria-hidden="true">🌐</span>';
+}
+
+function renderSide() {
+  const counts = new Map((data?.leagues || []).map((l) => [leagueId(l), l.matches.length]));
+  $("pinned").innerHTML = pinned.length
+    ? pinned.map((p) => {
+        const n = counts.get(p.id) || 0;
+        return `<li class="${leagueFilter === p.id ? "on" : ""}${data && !n ? " empty" : ""}">
+          <button type="button" class="lg" data-lg="${esc(p.id)}" aria-pressed="${leagueFilter === p.id}">${flag(p.country)}<span class="lg-name">${esc(p.title)}</span>${n ? `<span class="lg-n">${n}</span>` : ""}</button>
+          <button type="button" class="unpin" data-unpin="${esc(p.id)}" aria-label="Desafixar ${esc(p.title)}" title="Desafixar">×</button>
+        </li>`;
+      }).join("")
+    : '<li class="pin-empty">Nenhuma liga fixada. Use o alfinete ao lado do nome de uma liga.</li>';
+  const note = $("leagueNote"), active = pinned.find((p) => p.id === leagueFilter);
+  note.hidden = !active;
+  if (active) note.innerHTML = `${flag(active.country)}<span>Mostrando só <b>${esc(active.title)}</b></span><button type="button" data-clear-league>Ver todas as ligas</button>`;
+}
+
 function render() {
   if (!data) return;
   const q = $("q").value.trim().toLowerCase();
   const html = data.leagues.map((l) => {
+    if (leagueFilter && leagueId(l) !== leagueFilter) return "";
     const ms = l.matches.map((m) => ({ ...m, __league: l.name })).filter((m) => (filter === "all" || (filter === "live") === m.live) && (!q || `${l.name} ${m.home} ${m.away}`.toLowerCase().includes(q)));
     if (!ms.length) return "";
-    return `<h2>${esc(l.name)}</h2>` + ms.map((m) => `
+    const pin = toPinned(l), isPinned = pinned.some((p) => p.id === pin.id);
+    return `<h2><span class="lh">${flag(l.country)}<span>${esc(l.name)}</span></span><button type="button" class="pin${isPinned ? " on" : ""}" data-pin="${esc(pin.id)}" data-title="${esc(pin.title)}" data-country="${esc(pin.country || "")}" aria-pressed="${isPinned}" title="${isPinned ? "Desafixar liga" : "Fixar liga"}">${PIN_SVG}</button></h2>` + ms.map((m) => `
       <div class="m${selected.has(m.id) ? " sel" : ""}">
         <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}" data-league="${esc(l.name)}"${selected.has(m.id) ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
         <div><div class="t">${esc(m.home)} × ${esc(m.away)}${m.live ? '<span class="live">AO VIVO</span>' : ""}</div><div class="when">${fmtTime(m.startTime)}</div></div>
@@ -39,6 +69,7 @@ function render() {
       </div>`).join("");
   }).join("");
   $("list").innerHTML = html || "<p>Nenhum jogo encontrado.</p>";
+  renderSide();
   updateBar();
 }
 
@@ -126,7 +157,36 @@ async function load() {
 
 $("q").addEventListener("input", render);
 $("list").addEventListener("change", (e) => e.target.matches("input[data-id]") && toggle(e.target));
-$("list").addEventListener("click", (e) => { const b = e.target.closest("button.odd"); if (b) togglePick(b); });
+$("list").addEventListener("click", (e) => {
+  const odd = e.target.closest("button.odd");
+  if (odd) return togglePick(odd);
+  const pin = e.target.closest("button.pin");
+  if (pin) {
+    pinned = togglePinned(pinned, { id: pin.dataset.pin, title: pin.dataset.title, country: pin.dataset.country || null });
+    savePinned(localStorage, pinned);
+    render();
+  }
+});
+
+// Menu "Ligas fixadas": clicar numa liga filtra a lista; clicar de novo (ou em "Ver todas") limpa.
+$("pinnedBox").addEventListener("click", (e) => {
+  const un = e.target.closest("[data-unpin]");
+  if (un) {
+    pinned = pinned.filter((p) => p.id !== un.dataset.unpin);
+    if (leagueFilter === un.dataset.unpin) leagueFilter = null;
+    savePinned(localStorage, pinned);
+    return render();
+  }
+  const lg = e.target.closest("[data-lg]");
+  if (lg) { leagueFilter = leagueFilter === lg.dataset.lg ? null : lg.dataset.lg; render(); }
+});
+$("leagueNote").addEventListener("click", (e) => { if (e.target.closest("[data-clear-league]")) { leagueFilter = null; render(); } });
+
+// No computador o menu fica aberto ao lado da lista; no celular começa recolhido.
+const wide = matchMedia("(min-width: 860px)");
+$("pinnedBox").open = wide.matches;
+wide.addEventListener("change", (e) => { $("pinnedBox").open = e.matches; });
+renderSide();
 $("clear").onclick = () => { selected.clear(); persist(); render(); };
 $("send").onclick = () => {
   if (!selected.size) return;

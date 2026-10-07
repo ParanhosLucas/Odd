@@ -2,13 +2,14 @@
 @media (prefers-color-scheme:light){:root{--bg:#f4f5f7;--card:#fff;--line:#e2e5ea;--fg:#14171c;--mut:#667085}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px;max-width:900px;margin:auto}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px;max-width:1140px;margin:auto}
 h1{font-size:20px;margin:0;flex:1 1 100%}
 #q{flex:1;min-width:200px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
 #status{color:var(--mut);font-size:13px}
-#banner{max-width:868px;margin:0 16px 12px;padding:10px 12px;border-radius:8px;background:#5a3a00;color:#ffd9a0;font-size:13px}
-@media(min-width:932px){#banner{margin:0 auto 12px}}
-main{max-width:900px;margin:auto;padding:0 16px 40px}
+#banner{max-width:1108px;margin:0 16px 12px;padding:10px 12px;border-radius:8px;background:#5a3a00;color:#ffd9a0;font-size:13px}
+@media(min-width:1140px){#banner{margin:0 auto 12px}}
+.layout{max-width:1140px;margin:auto;padding:0 16px;display:grid;grid-template-columns:1fr;gap:16px}
+main{padding:0 0 40px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:20px 0 8px}
 .m{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .t{font-weight:600}.when{color:var(--mut);font-size:12px}
@@ -38,3 +39,36 @@ button.odd:hover{border-color:#25d366}
 button.odd.on{background:#25d366;border-color:#25d366}
 button.odd.on small,button.odd.on b,button.odd.on b.up,button.odd.on b.down{color:#04210f}
 button.odd:focus-visible,.pick input:focus-visible{outline:2px solid #25d366;outline-offset:2px}
+
+/* Menu "Ligas fixadas" */
+#side details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 6px 8px}
+#side summary{display:flex;align-items:center;gap:8px;padding:8px 8px;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.04em;list-style:none}
+#side summary::-webkit-details-marker{display:none}
+#side summary::after{content:"▾";margin-left:auto;color:var(--mut)}
+#side details:not([open]) summary::after{content:"▸"}
+.pinicon{width:14px;height:14px;fill:currentColor;flex:none}
+#pinned{list-style:none;margin:0;padding:0}
+#pinned li{display:flex;align-items:center;border-radius:8px}
+#pinned li:hover,#pinned li.on{background:var(--bg)}
+#pinned li.on .lg-name{font-weight:700;color:var(--acc)}
+#pinned li.empty .lg-name{opacity:.55}
+.lg{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;color:inherit;font:inherit;text-align:left;padding:8px 8px;cursor:pointer}
+.lg-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-n{margin-left:auto;color:var(--mut);font-size:12px}
+.unpin{border:0;background:none;color:var(--mut);cursor:pointer;font-size:16px;padding:4px 8px;opacity:0}
+#pinned li:hover .unpin,.unpin:focus-visible{opacity:1}
+@media(hover:none){.unpin{opacity:.7}}
+.pin-empty{color:var(--mut);font-size:13px;padding:6px 8px}
+.flag{width:22px;height:15px;border-radius:2px;object-fit:cover;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.flag.globe{width:22px;height:auto;box-shadow:none;text-align:center;font-size:14px;line-height:15px}
+h2{display:flex;align-items:center;gap:8px}
+h2 .lh{display:flex;align-items:center;gap:8px;min-width:0}
+.pin{margin-left:auto;border:0;background:none;color:var(--mut);cursor:pointer;padding:2px 4px;border-radius:6px;line-height:0}
+.pin .pinicon{width:15px;height:15px;opacity:.5}
+.pin.on{color:var(--acc)}.pin.on .pinicon{opacity:1}
+.pin:hover .pinicon{opacity:1}
+#leagueNote{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px}
+#leagueNote[hidden]{display:none}
+#leagueNote button{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:3px 10px;font:inherit;cursor:pointer}
+@media(min-width:860px){.layout{grid-template-columns:240px minmax(0,1fr);align-items:start}#side{position:sticky;top:12px}}
+.live{white-space:nowrap}

@@ -23,7 +23,18 @@
   </div>
 </header>
 <div id="banner" hidden></div>
-<main id="list"></main>
+<div class="layout">
+  <aside id="side">
+    <details id="pinnedBox" open>
+      <summary><svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 1.2 14.8 6.2 13.4 7.6l-1-.4-2.3 2.3.2 2.6-1.1 1.1-2.6-2.6-3.9 3.9-.7-.7 3.9-3.9L2.3 7.3l1.1-1.1 2.6.2 2.3-2.3-.4-1z"/></svg><span>LIGAS FIXADAS</span></summary>
+      <ul id="pinned"></ul>
+    </details>
+  </aside>
+  <div class="content">
+    <div id="leagueNote" hidden></div>
+    <main id="list"></main>
+  </div>
+</div>
 <div id="bar" hidden>
   <span id="count"></span>
   <button id="clear" type="button">Limpar</button>
