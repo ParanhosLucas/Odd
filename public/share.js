@@ -1,3 +1,5 @@
+// Emojis: só os do plano básico do Unicode (um único caractere, sem seletor de variação nem junção),
+// porque os de 4 bytes (ex.: círculo vermelho) chegam como "�" no WhatsApp Web via link wa.me.
 // Monta a mensagem de WhatsApp com os jogos selecionados e o link wa.me.
 export const MAX_SELECTED = 30; // mantém o link dentro de um tamanho seguro
 
@@ -19,13 +21,13 @@ export function buildMessage(items) {
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
-  const lines = ["⚽ *Odds Futebol*"];
+  const lines = ["⚡ *Odds Futebol*"];
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {
       const o = m.odds || {};
       const keys = OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
-      lines.push(`${m.home} × ${m.away}${m.live ? " 🔴 AO VIVO" : ""}`);
+      lines.push(`${m.home} × ${m.away}${m.live ? " ⭕ AO VIVO" : ""}`);
       lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `${label}: ${odd(o[k])}`).join(" | ")}`);
     }
   }
