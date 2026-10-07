@@ -1,7 +1,7 @@
 // Monta a mensagem de WhatsApp com os jogos selecionados e o link wa.me.
 export const MAX_SELECTED = 30; // mantém o link dentro de um tamanho seguro
 
-export const OUTCOMES = [["home", "1"], ["draw", "X"], ["away", "2"]];
+export const OUTCOMES = [["home", "Casa"], ["draw", "Empate"], ["away", "Fora"]];
 
 const odd = (v) => (v == null ? "—" : v.toFixed(2));
 
@@ -19,7 +19,7 @@ export function buildMessage(items) {
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
-  const lines = ["⚽ *Odds Futebol* (1 = casa · X = empate · 2 = fora)"];
+  const lines = ["⚽ *Odds Futebol*"];
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {

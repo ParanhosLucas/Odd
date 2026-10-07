@@ -35,7 +35,7 @@ function render() {
       <div class="m${selected.has(m.id) ? " sel" : ""}">
         <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}" data-league="${esc(l.name)}"${selected.has(m.id) ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
         <div><div class="t">${esc(m.home)} × ${esc(m.away)}${m.live ? '<span class="live">AO VIVO</span>' : ""}</div><div class="when">${fmtTime(m.startTime)}</div></div>
-        <div class="o">${cell("1", "home", m)}${cell("X", "draw", m)}${cell("2", "away", m)}</div>
+        <div class="o">${cell("Casa", "home", m)}${cell("Empate", "draw", m)}${cell("Fora", "away", m)}</div>
       </div>`).join("");
   }).join("");
   $("list").innerHTML = html || "<p>Nenhum jogo encontrado.</p>";
