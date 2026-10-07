@@ -19,17 +19,17 @@ export function buildMessage(items) {
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
-  const lines = ["⚽ *Odds Futebol*"];
+  const lines = ["*Odds Futebol*"];
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);
     for (const { match: m, picks } of matches) {
       const o = m.odds || {};
       const keys = OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
-      lines.push(`${m.home} × ${m.away}${m.live ? " 🔴 AO VIVO" : ""}`);
+      lines.push(`${m.home} × ${m.away}${m.live ? " (AO VIVO)" : ""}`);
       lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `${label}: ${odd(o[k])}`).join(" | ")}`);
     }
   }
-  lines.push("", "_Odds bet365 via Flashscore; mudam a qualquer momento._");
+  lines.push("", "*Odds mudam a qualquer momento*");
   return lines.join("\n");
 }
 
