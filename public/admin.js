@@ -1,3 +1,5 @@
+import { roleLabel } from "/roles.js";
+
 const $ = (id) => document.getElementById(id);
 const JSON_H = { "content-type": "application/json" };
 let me = null;
@@ -25,7 +27,7 @@ function render(users) {
   for (const u of users) {
     const tr = document.createElement("tr");
     const isMe = u.username === me.username;
-    tr.append(cell(isMe ? `${u.username} (você)` : u.username), cell(u.role === "admin" ? "Administrador" : "Usuário"), cell(new Date(u.createdAt).toLocaleString("pt-BR")));
+    tr.append(cell(isMe ? `${u.username} (você)` : u.username), cell(roleLabel(u.role)), cell(new Date(u.createdAt).toLocaleString("pt-BR")));
     const td = document.createElement("td");
     if (!isMe) {
       const btn = Object.assign(document.createElement("button"), { type: "button", textContent: "Excluir", className: "danger" });
