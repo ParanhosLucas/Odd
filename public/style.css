@@ -1,5 +1,7 @@
-:root{--bg:#0f1115;--card:#181b22;--line:#262a33;--fg:#e8eaf0;--mut:#8b93a3;--odd-flat:#ff6b00;--brand:#27c7d2;--on-brand:#031c20;--brand-glow:rgba(39,199,210,.28)}
-@media (prefers-color-scheme:light){:root{--bg:#f4f5f7;--card:#fff;--line:#e2e5ea;--fg:#14171c;--mut:#667085;--brand:#08818c;--on-brand:#fff;--brand-glow:rgba(8,129,140,.3)}}
+:root{color-scheme:dark;--bg:#0f1115;--card:#181b22;--line:#262a33;--fg:#e8eaf0;--mut:#8b93a3;--odd-flat:#ff6b00;--brand:#27c7d2;--on-brand:#031c20;--brand-glow:rgba(39,199,210,.28)}
+/* Claro: escolhido no botão (data-theme="light") OU, sem escolha, quando o sistema está no claro */
+@media (prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f4f5f7;--card:#fff;--line:#e2e5ea;--fg:#14171c;--mut:#667085;--brand:#08818c;--on-brand:#fff;--brand-glow:rgba(8,129,140,.3)}}
+:root[data-theme="light"]{color-scheme:light;--bg:#f4f5f7;--card:#fff;--line:#e2e5ea;--fg:#14171c;--mut:#667085;--brand:#08818c;--on-brand:#fff;--brand-glow:rgba(8,129,140,.3)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px;max-width:1140px;margin:auto}
@@ -119,3 +121,12 @@ h1.brand{flex:1}
 .auth .logo img{border-radius:18px;box-shadow:0 6px 18px var(--brand-glow)}
 .auth .sub{text-align:center}
 .brand-sm{font-size:18px}.brand-sm img{border-radius:8px}
+
+/* Botão de tema */
+#themeToggle{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
+#themeToggle:hover{border-color:var(--brand);color:var(--brand)}
+#themeToggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#themeToggle .ico-sun{display:none}
+#themeToggle[data-mode="dark"] .ico-sun{display:inline}
+#themeToggle[data-mode="dark"] .ico-moon{display:none}
+#themeToggle:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
