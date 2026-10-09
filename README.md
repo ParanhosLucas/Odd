@@ -62,9 +62,16 @@ Resposta de `/api/odds`:
 
 `prev` são as odds anteriores (a UI mostra ↑/↓ comparando). `stale: true` = o Flashscore falhou e o dado é o último obtido.
 
+## Desempenho (trocar de dia sem "Carregando…")
+
+- **Servidor:** o cache de odds responde **na hora** com o dado anterior e atualiza por trás (*stale-while-revalidate*), em vez de fazer quem pediu esperar a busca no Flashscore (0,5 a 2 s). O TTL cresce com a distância (hoje 30 s, amanhã 60 s, depois 5 min), os dias de hoje a +3 são aquecidos na subida do servidor, e uma falha da fonte não é repetida em rajada (espera 10 s). A sessão do usuário fica 30 s em memória (`SESSION_CACHE_SECONDS`), então a maioria das requisições nem toca no banco; encerrar a sessão ou excluir o usuário vale na hora.
+- **Banco:** as conexões ficam abertas por 3 min (refazer TLS + autenticação a cada consulta custa várias idas e voltas).
+- **Tela:** os dias já vistos ficam guardados no navegador; ao trocar de dia o que existe aparece **na hora** e é atualizado por trás; os dias vizinhos são pré-carregados (e também ao aproximar o mouse/dedo dos botões ‹ ›); dia nunca visto mostra um esqueleto em vez de texto. A lista é desenhada em partes (os primeiros jogos já na primeira pintura), o navegador não desenha o que está fora da tela (`content-visibility`) e clicar numa odd atualiza só aquele cartão. Medido com 449 a 892 jogos: trocar de dia caiu de 177–544 ms para 25–44 ms, e clicar numa odd de uma refação da lista inteira para 3–4 ms.
+- A atualização automática (a cada 30 s) só roda com a aba visível.
+
 ## Como o backend se comporta
 
-- **Cache por dia** (`CACHE_TTL_SECONDS`) e **uma única busca** para requisições simultâneas.
+- **Cache por dia** (`CACHE_TTL_SECONDS` vale para hoje; amanhã ×2, depois ×10) e **uma única busca** para requisições simultâneas.
 - **Falha da fonte:** serve o último dado bom por até `STALE_MAX_SECONDS`; depois, `502` (ou dados de demonstração se `DEMO_FALLBACK=1`).
 - **Rate limit** por IP, cabeçalhos de segurança (CSP etc.), gzip, bloqueio de path traversal, encerramento gracioso (SIGTERM).
 

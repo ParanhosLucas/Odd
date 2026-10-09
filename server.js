@@ -32,6 +32,10 @@ const app = createApp({
 
 const server = http.createServer(app).listen(config.port, () => console.log(`MCZ Bet em http://localhost:${config.port}`));
 
+// Aquece o cache de odds (hoje até +3 dias) em segundo plano, com intervalo entre as buscas, para o primeiro
+// usuário não esperar a busca no Flashscore.
+app.warm([0, 1, 2, 3], { gapMs: 700 }).then(() => console.log("Cache de odds aquecido."));
+
 // O banco pode demorar a ficar pronto no primeiro deploy: tenta de novo em vez de derrubar o servidor.
 // Enquanto isso, as rotas que dependem do banco respondem 503.
 const auth = createAuth({ store, config });

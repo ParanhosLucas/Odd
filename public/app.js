@@ -1,4 +1,6 @@
 import { scopedStorage } from "/scoped-storage.js";
+import { createDayCache } from "/day-cache.js";
+import { createProgressiveRenderer } from "/progressive.js";
 import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
@@ -17,6 +19,12 @@ $("logout").onclick = async () => {
   location.replace("/login.html");
 };
 let data = null, day = 0;
+let matchIndex = new Map(); // id do jogo -> { m, leagueName } (busca instantânea; evita varrer a lista toda)
+function setData(next) {
+  data = next;
+  matchIndex = new Map();
+  for (const l of next?.leagues ?? []) for (const m of l.matches) matchIndex.set(m.id, { m, leagueName: l.name });
+}
 
 let pinned = loadPinned(store);   // ligas fixadas: [{ id, title, country }]
 let leagueFilter = null;                 // id da liga escolhida no menu (ou null = todas)
@@ -35,7 +43,9 @@ const persist = () => { try { store.setItem(STORE, JSON.stringify([...selected.v
 
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const fmtTime = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+// Formatador criado UMA vez: criar um novo a cada jogo era um dos custos de desenhar a lista.
+const timeFmt = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const fmtTime = (iso) => (iso ? timeFmt.format(new Date(iso)) : "");
 
 function cell(label, key, m) {
   const odds = m.odds;
@@ -48,7 +58,7 @@ function cell(label, key, m) {
   const on = item?.picks.includes(key);
   // Retorno (aposta × odd) só nas odds que você escolheu (clicou); marcar apenas o jogo não calcula nada.
   const ret = stakeCents && on ? `<em class="ret">${formatBRL(payoutCents(stakeCents, v))}</em>` : "";
-  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" data-league="${esc(m.__league)}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b>${ret}</button>`;
+  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b>${ret}</button>`;
 }
 
 function flag(country) {
@@ -69,25 +79,49 @@ function renderSide() {
   if (active) note.innerHTML = `${flag(active.country)}<span>Mostrando só <b>${esc(active.title)}</b></span><button type="button" data-clear-league>Ver todas as ligas</button>`;
 }
 
-function render() {
-  if (!data) return;
-  const q = $("q").value.trim().toLowerCase();
-  const html = data.leagues.map((l) => {
-    if (leagueFilter && leagueId(l) !== leagueFilter) return "";
-    const ms = l.matches.map((m) => ({ ...m, __league: l.name })).filter((m) => !q || `${l.name} ${m.home} ${m.away}`.toLowerCase().includes(q));
-    if (!ms.length) return "";
-    const pin = toPinned(l), isPinned = pinned.some((p) => p.id === pin.id);
-    return `<h2><span class="lh">${flag(l.country)}<span>${esc(l.name)}</span></span><button type="button" class="pin${isPinned ? " on" : ""}" data-pin="${esc(pin.id)}" data-title="${esc(pin.title)}" data-country="${esc(pin.country || "")}" aria-pressed="${isPinned}" title="${isPinned ? "Desafixar liga" : "Fixar liga"}">${PIN_SVG}</button></h2>` + ms.map((m) => `
-      <div class="m${selected.has(m.id) ? " sel" : ""}">
-        <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}" data-league="${esc(l.name)}"${selected.has(m.id) ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
+function headerHtml(l) {
+  const pin = toPinned(l), isPinned = pinned.some((p) => p.id === pin.id);
+  return `<h2><span class="lh">${flag(l.country)}<span>${esc(l.name)}</span></span><button type="button" class="pin${isPinned ? " on" : ""}" data-pin="${esc(pin.id)}" data-title="${esc(pin.title)}" data-country="${esc(pin.country || "")}" aria-pressed="${isPinned}" title="${isPinned ? "Desafixar liga" : "Fixar liga"}">${PIN_SVG}</button></h2>`;
+}
+
+function cardHtml(m) {
+  const sel = selected.has(m.id);
+  return `<div class="m${sel ? " sel" : ""}">
+        <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}"${sel ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
         <div><div class="t">${esc(m.home)} × ${esc(m.away)}</div><div class="when">${fmtTime(m.startTime)}</div></div>
         <div class="o">${cell("Casa", "home", m)}${cell("Empate", "draw", m)}${cell("Fora", "away", m)}</div>
-      </div>`).join("");
-  }).join("");
-  $("list").innerHTML = html || "<p>Nenhum jogo encontrado.</p>";
+      </div>`;
+}
+
+// A lista longa (centenas de jogos) é desenhada em partes: os primeiros já na primeira pintura, o resto por quadro.
+const drawList = createProgressiveRenderer({ target: $("list") });
+
+function render() {
+  if (!data) return;
+  $("list").removeAttribute("aria-busy");
+  const q = $("q").value.trim().toLowerCase();
+  const items = [];
+  for (const l of data.leagues) {
+    if (leagueFilter && leagueId(l) !== leagueFilter) continue;
+    const ms = q ? l.matches.filter((m) => `${l.name} ${m.home} ${m.away}`.toLowerCase().includes(q)) : l.matches;
+    if (!ms.length) continue;
+    items.push(() => headerHtml(l));
+    for (const m of ms) items.push(() => cardHtml(m));
+  }
+  drawList(items, "<p>Nenhum jogo encontrado.</p>");
   renderSide();
   updateBar();
 }
+
+// Atualiza SÓ o cartão de um jogo (em vez de refazer a lista inteira a cada clique).
+const cardElement = (id) => $("list").querySelector(`input[data-id="${CSS.escape(id)}"]`)?.closest(".m") ?? null;
+function replaceCard(id, focusSelector) {
+  const el = cardElement(id), hit = matchIndex.get(id);
+  if (!el || !hit) return; // jogo de outro dia ou ainda não desenhado: não há o que atualizar na tela
+  el.outerHTML = cardHtml(hit.m);
+  if (focusSelector) cardElement(id)?.querySelector(focusSelector)?.focus(); // quem usa teclado não perde o foco
+}
+const refreshSelectedCards = () => { for (const id of selected.keys()) replaceCard(id); };
 
 function updateBar(note) {
   const n = selected.size;
@@ -109,34 +143,33 @@ function updateBar(note) {
 }
 
 // Seleciona o jogo (se ainda não estiver) e devolve o item; null se estourou o limite.
-function ensureSelected(id, leagueName) {
+function ensureSelected(id) {
   if (selected.has(id)) return selected.get(id);
-  const league = data?.leagues.find((l) => l.name === leagueName);
-  const match = league?.matches.find((m) => m.id === id);
-  if (!match) return null;
+  const hit = matchIndex.get(id);
+  if (!hit) return null;
   if (selected.size >= MAX_SELECTED) { updateBar(`Máximo de ${MAX_SELECTED} jogos por mensagem`); return null; }
-  const item = { league: league.name, match, picks: [] };
+  const item = { league: hit.leagueName, match: hit.m, picks: [] };
   selected.set(id, item);
   return item;
 }
 
 function togglePick(btn) {
-  const item = ensureSelected(btn.dataset.id, btn.dataset.league);
+  const id = btn.dataset.id, key = btn.dataset.key;
+  const item = ensureSelected(id);
   if (!item) return;
-  const key = btn.dataset.key;
   item.picks = item.picks.includes(key) ? item.picks.filter((k) => k !== key) : [...item.picks, key];
   persist();
-  render();
+  replaceCard(id, `[data-key="${key}"]`);
+  updateBar();
 }
 
 function toggle(input) {
   const id = input.dataset.id;
   if (!input.checked) selected.delete(id);
-  else {
-    if (!ensureSelected(id, input.dataset.league)) { input.checked = false; return; }
-  }
+  else if (!ensureSelected(id)) { input.checked = false; return; }
   persist();
-  render();
+  replaceCard(id, ".pick input");
+  updateBar();
 }
 
 // Jogo selecionado que já começou e saiu da lista (ao vivo/encerrado, não exibidos) é removido da seleção;
@@ -168,38 +201,76 @@ function updateDays() {
   $("next").disabled = day >= (data?.maxDay ?? 7);
 }
 
-function setDay(d) {
-  day = d; data = null;
-  $("list").innerHTML = "<p>Carregando…</p>";
+// Busca um dia no servidor. Toda busca (inclusive as de pré-carregamento) já atualiza as odds dos jogos selecionados.
+async function fetchDay(d) {
+  const res = await fetch(`/api/odds?day=${d}`);
+  if (res.status === 401) { location.replace("/login.html"); throw new Error("Sessão encerrada"); } // expirou ou foi encerrada
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  const next = await res.json();
+  refreshSelected(next.leagues);
+  return next;
+}
+const dayCache = createDayCache({ fetchDay });
+
+function applyMeta(next) {
+  const b = $("banner");
+  b.hidden = next.source !== "demo" && !next.stale;
+  if (next.source === "demo") b.textContent = `Mostrando dados de DEMONSTRAÇÃO (não são odds reais). Motivo: ${next.error}`;
+  else if (next.stale) b.textContent = `Flashscore indisponível; mostrando as últimas odds obtidas (${new Date(next.updatedAt).toLocaleTimeString("pt-BR")}).`;
+  $("status").textContent = "Atualizado " + new Date(next.updatedAt).toLocaleTimeString("pt-BR");
+}
+
+function applyData(next) {
+  setData(next);
+  render();
   updateDays();
-  load();
+  applyMeta(next);
 }
 
-async function load() {
-  try {
-    const res = await fetch(`/api/odds?day=${day}`);
-    if (res.status === 401) return void location.replace("/login.html"); // sessão expirou ou foi encerrada
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
-    const next = await res.json();
-    if (next.day !== day) return; // resposta de um dia que já não está selecionado
-    data = next;
+// Esqueleto no lugar do texto "Carregando…": a página não "pula" e dá a sensação de resposta imediata.
+function renderSkeleton() {
+  const list = $("list");
+  list.setAttribute("aria-busy", "true");
+  list.innerHTML = '<h2 class="skel-title" aria-hidden="true"><span class="skel-bar"></span></h2>' + Array.from({ length: 5 }, () =>
+    '<div class="m skel" aria-hidden="true"><span class="skel-box"></span><div><span class="skel-bar w60"></span><span class="skel-bar w30"></span></div><div class="o"><span class="skel-pill"></span><span class="skel-pill"></span><span class="skel-pill"></span></div></div>').join("");
+}
+
+function showError(e, hadData) {
+  $("status").textContent = "Falha ao atualizar: " + e.message;
+  if (!hadData) $("list").innerHTML = `<p class="loaderr">Não foi possível carregar este dia (${esc(e.message)}). <button type="button" data-retry>Tentar de novo</button></p>`;
+}
+
+// Mostra um dia: o que já temos aparece NA HORA; se estiver velho, atualiza por trás sem esvaziar a tela.
+function show(d) {
+  day = d;
+  updateDays();
+  const { cached, refresh } = dayCache.open(d);
+  if (cached) { setData(cached); render(); applyMeta(cached); } else { setData(null); renderSkeleton(); $("status").textContent = "Carregando…"; }
+  refresh?.then((next) => {
+    if (day !== d) return; // o usuário já foi para outro dia
     purgeStarted(next.leagues);
-    refreshSelected(next.leagues);
-    render();
-    updateDays();
-    const b = $("banner");
-    b.hidden = next.source !== "demo" && !next.stale;
-    if (next.source === "demo") b.textContent = `Mostrando dados de DEMONSTRAÇÃO (não são odds reais). Motivo: ${next.error}`;
-    else if (next.stale) b.textContent = `Flashscore indisponível; mostrando as últimas odds obtidas (${new Date(next.updatedAt).toLocaleTimeString("pt-BR")}).`;
-    $("status").textContent = "Atualizado " + new Date(next.updatedAt).toLocaleTimeString("pt-BR");
-  } catch (e) {
-    $("status").textContent = "Falha ao atualizar: " + e.message;
-  }
+    applyData(next);
+  }).catch((e) => { if (day === d) showError(e, Boolean(cached)); });
+  // Com o dia atual encaminhado, adianta os vizinhos: o próximo clique já encontra tudo pronto.
+  setTimeout(() => dayCache.prefetch([d + 1, d - 1]), 250);
 }
 
-$("q").addEventListener("input", render);
+// Atualização periódica do dia atual (só com a aba visível, para não gastar o servidor à toa).
+function refreshCurrent() {
+  if (document.hidden) return;
+  const d = day;
+  dayCache.load(d).then((next) => {
+    if (day !== d) return;
+    purgeStarted(next.leagues);
+    applyData(next);
+  }).catch((e) => { if (day === d) showError(e, Boolean(data)); });
+}
+
+let searchTimer;
+$("q").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(render, 150); }); // não refaz a lista a cada letra
 $("list").addEventListener("change", (e) => e.target.matches("input[data-id]") && toggle(e.target));
 $("list").addEventListener("click", (e) => {
+  if (e.target.closest("[data-retry]")) return show(day);
   const odd = e.target.closest("button.odd");
   if (odd) return togglePick(odd);
   const pin = e.target.closest("button.pin");
@@ -229,12 +300,19 @@ const wide = matchMedia("(min-width: 860px)");
 $("pinnedBox").open = wide.matches;
 wide.addEventListener("change", (e) => { $("pinnedBox").open = e.matches; });
 renderSide();
-$("clear").onclick = () => { selected.clear(); persist(); render(); };
+$("clear").onclick = () => {
+  const ids = [...selected.keys()];
+  selected.clear();
+  persist();
+  for (const id of ids) replaceCard(id);
+  updateBar();
+};
 $("stake").addEventListener("input", (e) => {
   stakeCents = parseStake(e.target.value);
   e.target.classList.toggle("bad", e.target.value.trim() !== "" && stakeCents === null);
   try { store.setItem(STAKE_KEY, e.target.value); } catch {}
-  render();
+  refreshSelectedCards(); // só os cartões selecionados mostram retorno
+  updateBar();
 });
 try { $("stake").value = store.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
 
@@ -266,8 +344,12 @@ $("copy").onclick = async () => {
   updateBar(`Mensagem copiada (registro ${number})! Cole no WhatsApp.`);
   setTimeout(() => updateBar(), 2500);
 };
-$("prev").onclick = () => setDay(day - 1);
-$("next").onclick = () => setDay(day + 1);
-updateDays();
-load();
-setInterval(load, 30_000);
+for (const ev of ["pointerenter", "focus", "touchstart"]) { // antecipa o dia para onde o usuário vai
+  $("prev").addEventListener(ev, () => dayCache.prefetch([day - 1]), { passive: true });
+  $("next").addEventListener(ev, () => dayCache.prefetch([day + 1]), { passive: true });
+}
+$("prev").onclick = () => show(day - 1);
+$("next").onclick = () => show(day + 1);
+show(0);
+setInterval(refreshCurrent, 30_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !dayCache.isFresh(day)) refreshCurrent(); });

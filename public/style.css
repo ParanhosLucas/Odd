@@ -136,3 +136,18 @@ h1.brand{flex:1}
 #minHint[hidden]{display:none}
 #bar button:disabled{opacity:.4;cursor:not-allowed}
 #send:disabled{filter:grayscale(.6)}
+
+/* Esqueleto de carregamento (aparece só quando o dia ainda não foi visto) */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-bar,.skel-box,.skel-pill{display:block;border-radius:6px;background:linear-gradient(90deg,var(--line) 25%,var(--card) 50%,var(--line) 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+.skel-title{margin:20px 0 8px}.skel-title .skel-bar{width:240px;height:14px}
+.skel-bar{height:12px;margin:5px 0}.skel-bar.w60{width:60%;height:14px}.skel-bar.w30{width:30%}
+.skel-box{width:20px;height:20px}
+.skel-pill{width:64px;height:44px;border-radius:8px}
+.m.skel{min-height:64px}
+.loaderr{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.loaderr button{margin-left:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 12px;font:inherit;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.skel-bar,.skel-box,.skel-pill{animation:none}}
+
+/* Desempenho: o navegador não calcula nem desenha os cartões que estão fora da tela (listas de centenas de jogos) */
+.m{content-visibility:auto;contain-intrinsic-size:auto 76px}
