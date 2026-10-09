@@ -4,6 +4,7 @@ import { createProgressiveRenderer } from "/progressive.js";
 import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
+import { createTracker } from "/history-tracker.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
 const $ = (id) => document.getElementById(id);
@@ -18,6 +19,14 @@ $("logout").onclick = async () => {
   await fetch("/api/logout", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }).catch(() => {});
   location.replace("/login.html");
 };
+// Histórico: cada criação, alteração, limpeza, envio e cópia da aposta vai ao servidor (que grava a data e a hora).
+const history = createTracker({
+  storage: store,
+  send: (events, { keepalive } = {}) =>
+    fetch("/api/history", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ events }), keepalive })
+      .then((r) => ({ ok: r.ok, status: r.status }))
+      .catch(() => ({ ok: false, status: 0 })),
+});
 let data = null, day = 0;
 let matchIndex = new Map(); // id do jogo -> { m, leagueName } (busca instantânea; evita varrer a lista toda)
 function setData(next) {
@@ -40,6 +49,7 @@ try { for (const it of JSON.parse(store.getItem(STORE) || "[]")) selected.set(it
 const STAKE_KEY = "odd.stake";
 let stakeCents = null;
 const persist = () => { try { store.setItem(STORE, JSON.stringify([...selected.values()])); } catch {} };
+const trackSlip = () => history.track([...selected.values()], stakeCents);
 
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -163,6 +173,7 @@ function togglePick(btn) {
   if (!item) return;
   item.picks = item.picks.includes(key) ? item.picks.filter((k) => k !== key) : [...item.picks, key];
   persist();
+  trackSlip();
   replaceCard(id, `[data-key="${key}"]`);
   updateBar();
 }
@@ -172,6 +183,7 @@ function toggle(input) {
   if (!input.checked) selected.delete(id);
   else if (!ensureSelected(id)) { input.checked = false; return; }
   persist();
+  trackSlip();
   replaceCard(id, ".pick input");
   updateBar();
 }
@@ -184,7 +196,11 @@ function purgeStarted(leagues) {
   for (const [id, it] of selected) {
     if (!present.has(id) && Date.parse(it.match.startTime) <= Date.now()) { selected.delete(id); changed = true; }
   }
-  if (changed) persist();
+  if (changed) {
+    persist();
+    history.settle();
+    history.commit([...selected.values()], stakeCents, { reason: "Jogos removidos da seleção porque já começaram" });
+  }
 }
 
 // Mantém os jogos selecionados atualizados com as odds mais recentes.
@@ -306,8 +322,10 @@ wide.addEventListener("change", (e) => { $("pinnedBox").open = e.matches; });
 renderSide();
 $("clear").onclick = () => {
   const ids = [...selected.keys()];
+  history.settle();
   selected.clear();
   persist();
+  history.commit([], stakeCents);
   for (const id of ids) replaceCard(id);
   updateBar();
 };
@@ -315,10 +333,16 @@ $("stake").addEventListener("input", (e) => {
   stakeCents = parseStake(e.target.value);
   e.target.classList.toggle("bad", e.target.value.trim() !== "" && stakeCents === null);
   try { store.setItem(STAKE_KEY, e.target.value); } catch {}
+  trackSlip();
   refreshSelectedCards(); // só os cartões selecionados mostram retorno
   updateBar();
 });
 try { $("stake").value = store.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
+history.commit([...selected.values()], stakeCents); // retrato inicial (e o que mudou enquanto a página estava fechada)
+history.flush();                                    // reenvia o que ficou pendente (sem internet, por exemplo)
+const flushHistory = () => { history.settle(); history.flush({ keepalive: true }); };
+addEventListener("pagehide", flushHistory);
+addEventListener("online", () => history.flush());
 
 $("send").onclick = () => {
   if (!canSend(selected.size)) return; // o botão já fica desativado; isto cobre qualquer caminho que o ative
@@ -331,7 +355,9 @@ $("send").onclick = () => {
     return void setTimeout(() => updateBar(), 5000);
   }
   const number = register(store, slipKey(items, stakeCents));
-  window.open(whatsappUrl(buildMessage(items, { ...options, registration: number })), "_blank", "noopener");
+  const message = buildMessage(items, { ...options, registration: number });
+  window.open(whatsappUrl(message), "_blank", "noopener");
+  history.recordShare("sent", items, stakeCents, number, message);
   updateBar();
 };
 $("copy").onclick = async () => {
@@ -345,6 +371,7 @@ $("copy").onclick = async () => {
     const ta = Object.assign(document.createElement("textarea"), { value: text });
     document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
   }
+  history.recordShare("copied", items, stakeCents, number, text);
   updateBar(`Mensagem copiada (registro ${number})! Cole no WhatsApp.`);
   setTimeout(() => updateBar(), 2500);
 };
@@ -356,4 +383,7 @@ $("prev").onclick = () => show(day - 1);
 $("next").onclick = () => show(day + 1);
 show(0);
 setInterval(refreshCurrent, 30_000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden && !dayCache.isFresh(day)) refreshCurrent(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) flushHistory();
+  else if (!dayCache.isFresh(day)) refreshCurrent();
+});

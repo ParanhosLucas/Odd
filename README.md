@@ -47,6 +47,8 @@ TEST_DATABASE_URL=postgres://usuario@127.0.0.1:5432/banco_de_teste npm test   # 
 | `GET /healthz` | `{ ok, lastSuccessAt }` — para health checks (público). |
 | `POST /api/login` · `POST /api/logout` · `GET /api/me` | Login (`{ username, password }`), logout e usuário atual. |
 | `GET/POST /api/admin/users` · `DELETE /api/admin/users/:id` | Listar, criar e excluir usuários (só administrador). |
+| `POST /api/history` · `GET /api/history?limit&before` | Grava eventos da aposta do usuário logado / lista o PRÓPRIO histórico (mais novo primeiro, paginado por `before=<id>`). |
+| `GET /api/admin/history?username&limit&before` | Histórico de todos os usuários, com filtro por usuário (só administrador). |
 
 Tudo em `/api/*` (exceto `login` e `/healthz`) exige login: `401` sem sessão, `403` sem ser administrador, `503` se o banco estiver fora.
 
@@ -61,6 +63,17 @@ Resposta de `/api/odds`:
 ```
 
 `prev` são as odds anteriores (a UI mostra ↑/↓ comparando). `stale: true` = o Flashscore falhou e o dado é o último obtido.
+
+## Aba "Histórico"
+
+`/history.html` (aba ao lado de "Odds") lista cada aposta com **data e hora** (Brasília) de tudo o que foi feito: criada, alterada (jogo adicionado/removido, odd escolhida/retirada, valor da aposta), limpa, **enviada no WhatsApp** e **copiada** — com o número de registro e a mensagem enviada. O vendedor vê só o próprio histórico; o administrador vê todos, com filtro por usuário, e também as criações/exclusões de usuários. O histórico fica na tabela `bet_events` e **permanece mesmo se o usuário for excluído**.
+
+Limites que vale conhecer:
+- **A data e a hora são do servidor**, não do aparelho (o `clientAt` do aparelho é guardado à parte, só como informação).
+- O **conteúdo** do evento (jogos, odds, mensagem) vem do navegador; quem controla o próprio navegador poderia enviar um conteúdo falso do PRÓPRIO histórico (nunca do de outra pessoa).
+- "Enviada" significa que o botão do WhatsApp foi clicado: o WhatsApp não confirma a entrega.
+- Sem internet, os eventos ficam numa fila no navegador e são reenviados depois. Mudanças feitas com valor sendo digitado são agrupadas (~1 s) num evento só.
+- Alterar uma aposta **depois de enviada ou copiada** cria uma aposta nova (novo registro), como no número de registro.
 
 ## Desempenho (trocar de dia sem "Carregando…")
 
