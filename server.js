@@ -30,7 +30,7 @@ const app = createApp({
   publicDir: join(fileURLToPath(new URL(".", import.meta.url)), "public"),
 });
 
-const server = http.createServer(app).listen(config.port, () => console.log(`Odd em http://localhost:${config.port}`));
+const server = http.createServer(app).listen(config.port, () => console.log(`Mcz Bet em http://localhost:${config.port}`));
 
 // O banco pode demorar a ficar pronto no primeiro deploy: tenta de novo em vez de derrubar o servidor.
 // Enquanto isso, as rotas que dependem do banco respondem 503.

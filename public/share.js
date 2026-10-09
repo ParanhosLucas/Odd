@@ -65,7 +65,7 @@ export function buildMessage(items, { emojis = true, stakeCents = null, registra
     if (!byLeague.has(it.league)) byLeague.set(it.league, []);
     byLeague.get(it.league).push(it);
   }
-  const lines = [emojis ? "⚡ *Odds Futebol*" : "*Odds Futebol*"];
+  const lines = [emojis ? "⚡ *Mcz Bet*" : "*Mcz Bet*"];
   if (registration) lines.push(`*Registro*: ${registration}`);
   for (const [league, matches] of byLeague) {
     lines.push("", `*${league}*`);

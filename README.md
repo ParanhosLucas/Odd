@@ -1,4 +1,4 @@
-# Odd — odds de futebol (1X2)
+# Mcz Bet — odds de futebol (1X2)
 
 Espelha a aba **Odds** do Flashscore (futebol, bet365): jogos que ainda não começaram, de hoje até +7 dias (jogos ao vivo não são exibidos).
 
