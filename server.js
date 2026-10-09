@@ -1,10 +1,10 @@
 import http from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import pg from "pg";
 import { createApp } from "./lib/app.js";
 import { createAuth } from "./lib/auth.js";
 import { loadConfig } from "./lib/config.js";
+import { createPgPool } from "./lib/pg-pool.js";
 import { createMemoryStore, createPgStore } from "./lib/users-store.js";
 import { fetchFlashscore } from "./providers/flashscore.js";
 import { fetchDemo } from "./providers/demo.js";
@@ -13,8 +13,7 @@ const config = loadConfig();
 
 let pool = null, store;
 if (config.databaseUrl) {
-  pool = new pg.Pool({ connectionString: config.databaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: false } : undefined, max: 5 });
-  pool.on("error", (e) => console.error("Erro no banco (conexão ociosa):", e.message));
+  pool = createPgPool({ connectionString: config.databaseUrl, ssl: config.databaseSsl });
   store = createPgStore(pool);
 } else if (config.production) {
   console.error("DATABASE_URL é obrigatória em produção (usuários e sessões ficam no banco).");

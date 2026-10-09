@@ -14,7 +14,7 @@ Node 22+. Dependência de produção: `pg` (Postgres). Configuração por variá
 
 ## Login e usuários
 
-O site exige login. Os usuários e as sessões ficam num **Postgres** (no Render, criado pelo próprio `render.yaml`).
+O site exige login. Os usuários e as sessões ficam num **Postgres** externo (Neon, grátis; veja "Hospedar" abaixo).
 
 - **Primeiro administrador:** criado na subida a partir de `ADMIN_USER` / `ADMIN_PASSWORD`, **só se o banco ainda não tiver nenhum administrador** (nunca sobrescreve senhas). Se o banco for apagado/recriado, o admin volta sozinho com essas variáveis.
 - **Criar e excluir usuários:** logado como administrador, abra **Usuários** no topo do site (`/admin.html`). Excluir derruba as sessões abertas do usuário na hora. Não dá para excluir a si mesmo nem o último administrador.
@@ -33,7 +33,7 @@ Sem `DATABASE_URL` os usuários ficam em memória (somem ao reiniciar); em produ
 
 ### Testes
 
-`npm test` roda tudo (o Postgres é simulado com `pg-mem`). Para rodar também contra um Postgres de verdade:
+`npm test` roda tudo (o Postgres é simulado com `pg-mem`). Para rodar também contra um Postgres de verdade (inclui o teste que derruba as conexões à força):
 
 ```
 TEST_DATABASE_URL=postgres://usuario@127.0.0.1:5432/banco_de_teste npm test   # APAGA as tabelas users/sessions desse banco
@@ -68,20 +68,33 @@ Resposta de `/api/odds`:
 - **Falha da fonte:** serve o último dado bom por até `STALE_MAX_SECONDS`; depois, `502` (ou dados de demonstração se `DEMO_FALLBACK=1`).
 - **Rate limit** por IP, cabeçalhos de segurança (CSP etc.), gzip, bloqueio de path traversal, encerramento gracioso (SIGTERM).
 
-## Hospedar no Render (tudo pelo Blueprint)
+## Hospedar: site no Render + banco no Neon (grátis)
 
-O `render.yaml` cria o **site** e o **banco Postgres** juntos e liga os dois (`DATABASE_URL`), além de gerar a senha do administrador.
+O `render.yaml` cria só o **site**. Usuários e sessões ficam num Postgres **externo** (Neon), porque o banco grátis do Render expira 30 dias após criado e é apagado.
 
-1. Em render.com: *New → Blueprint* → escolha este repositório e a branch → *Apply*.
-2. Quando terminar, abra o serviço **odd → Environment** e copie o valor de `ADMIN_PASSWORD` (gerado pelo Render). O usuário é `admin` (`ADMIN_USER`).
-3. Abra o site, entre como `admin` e crie os outros usuários em **Usuários**.
+**1. Criar o banco no Neon** (neon.com, conta grátis)
+1. Crie uma conta e um projeto (nome `odd`). Escolha a região mais próxima do site no Render (o padrão do Render é Oregon → no Neon, *AWS US West 2 (Oregon)*).
+2. No painel do projeto, clique em **Connect**. Deixe **Connection pooling** ligado, escolha o banco `neondb` e copie a **connection string**. Ela tem este formato (e contém a senha):
+   `postgresql://neondb_owner:...@ep-...-pooler....neon.tech/neondb?sslmode=require&channel_binding=require`
 
-**Limites do plano grátis (confira os termos atuais em render.com/docs/free):**
-- O **banco grátis expira 30 dias após criado** e, passada a carência, é apagado com todos os dados (sem backup); só um banco grátis por conta. Para uso contínuo, passe `odd-db` para um plano pago (painel do Render → banco → *Upgrade*).
-- O site grátis "dorme" após ~15 min sem acesso (o primeiro acesso demora ~30 s). As sessões ficam no banco e sobrevivem a isso.
+**2. Ligar o site ao banco (Render)**
+1. Serviço **odd → Environment** → `DATABASE_URL` → cole a string do Neon → *Save*. A senha fica só no Render, nunca no GitHub.
+   (Se o Render pedir o valor de `DATABASE_URL` ao sincronizar o Blueprint, cole a mesma string.)
+2. **Manual Deploy → Deploy latest commit**. Nos logs devem aparecer `Banco de usuários pronto.` e `Administrador inicial "admin" criado.`
+
+**3. Entrar:** o usuário é `admin` e a senha é o valor de `ADMIN_PASSWORD` em **Environment** (gerado pelo Render). Depois crie os outros usuários em **Usuários**.
+
+**Se vinha do banco do Render:** depois de confirmar que o login funciona com o Neon, apague o banco antigo (`odd-db` → *Settings* → *Delete Database*). Os usuários dele não são migrados: o `admin` volta sozinho e os demais precisam ser criados de novo.
+
+**Como o Neon grátis se comporta (confira os termos atuais em neon.com/docs/introduction/plans):**
+- O banco **dorme após 5 minutos sem uso** e os dados continuam lá. O primeiro acesso depois disso demora de ~0,5 s a alguns segundos. O servidor fecha conexões ociosas antes e tenta de novo se uma conexão cair (`lib/pg-pool.js`).
+- Não encontrei indício de que o Neon apague banco grátis por inatividade. Mesmo assim, não há backup automático no plano grátis: se os usuários forem importantes, faça `pg_dump` de vez em quando.
+
+**Limites do site grátis no Render:**
+- O site "dorme" após ~15 min sem acesso (o primeiro acesso demora ~30 s). As sessões ficam no banco e sobrevivem a isso.
 - O cache de odds e o limite de requisições ficam em memória: use **uma instância**.
 
-Fora do Render: `docker build -t odd . && docker run -p 3000:3000 -e DATABASE_URL=... -e ADMIN_USER=... -e ADMIN_PASSWORD=... -e TRUST_PROXY=1 odd` (precisa de um Postgres acessível).
+Fora do Render: `docker build -t odd . && docker run -p 3000:3000 -e DATABASE_URL=... -e ADMIN_USER=... -e ADMIN_PASSWORD=... -e TRUST_PROXY=1 odd`.
 
 ## Aviso importante
 

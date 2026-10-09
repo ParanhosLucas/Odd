@@ -1,12 +1,6 @@
 # Blueprint do Render: https://render.com/docs/blueprint-spec
-# Cria TUDO de uma vez: o site (web service) e o banco Postgres onde ficam usuários e sessões.
-databases:
-  - name: odd-db
-    # ATENÇÃO: no plano "free" o banco EXPIRA 30 dias após ser criado e depois é APAGADO (sem backup).
-    # Para uso contínuo, mude para um plano pago no painel do Render (ou aqui).
-    plan: free
-    ipAllowList: [] # só aceita conexões internas do Render (o site); nada de acesso externo ao banco
-
+# Só o site. Usuários e sessões ficam num Postgres EXTERNO grátis (Neon): o banco grátis do Render
+# expira em 30 dias e é apagado. Veja o passo a passo no README.
 services:
   - type: web
     name: odd
@@ -19,10 +13,8 @@ services:
         value: production
       - key: TRUST_PROXY
         value: "1"
-      - key: DATABASE_URL # preenchida pelo Render com a conexão interna do banco acima
-        fromDatabase:
-          name: odd-db
-          property: connectionString
+      - key: DATABASE_URL # URL de conexão do Neon: cole em Environment no painel do Render (contém senha: nunca no GitHub)
+        sync: false
       - key: ADMIN_USER # primeiro administrador (só é criado se o banco ainda não tiver nenhum)
         value: admin
       - key: ADMIN_PASSWORD # gerada aleatoriamente pelo Render; veja em Environment no painel do serviço
