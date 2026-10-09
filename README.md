@@ -69,6 +69,10 @@ Resposta de `/api/odds`:
 - **Tela:** os dias já vistos ficam guardados no navegador; ao trocar de dia o que existe aparece **na hora** e é atualizado por trás; os dias vizinhos são pré-carregados (e também ao aproximar o mouse/dedo dos botões ‹ ›); dia nunca visto mostra um esqueleto em vez de texto. A lista é desenhada em partes (os primeiros jogos já na primeira pintura), o navegador não desenha o que está fora da tela (`content-visibility`) e clicar numa odd atualiza só aquele cartão. Medido com 449 a 892 jogos: trocar de dia caiu de 177–544 ms para 25–44 ms, e clicar numa odd de uma refação da lista inteira para 3–4 ms.
 - A atualização automática (a cada 30 s) só roda com a aba visível.
 
+## Celular
+
+Auditado em 320, 360, 390 e 412 px (retrato) e 740×360 (deitado), com toque: sem rolagem horizontal, nada cortado, todos os alvos de toque com ≥ 44 px, campos com 16 px (o Safari do iPhone dá zoom em campos menores), `viewport-fit=cover` (respeita o notch) e o fim da lista sempre acima da barra de baixo (a altura da barra é medida e reservada). O cabeçalho vira duas linhas e a barra de baixo três (informações · valor + Limpar · Copiar e Enviar). **Não use `content-visibility` nos cartões**: no Safari do iPhone o cartão atualizado no lugar aparecia vazio.
+
 ## Como o backend se comporta
 
 - **Cache por dia** (`CACHE_TTL_SECONDS` vale para hoje; amanhã ×2, depois ×10) e **uma única busca** para requisições simultâneas.

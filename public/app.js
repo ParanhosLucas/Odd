@@ -123,6 +123,10 @@ function replaceCard(id, focusSelector) {
 }
 const refreshSelectedCards = () => { for (const id of selected.keys()) replaceCard(id); };
 
+// A página reserva no fim exatamente a altura da barra (muda com o tamanho da tela, avisos e quebras de linha).
+const barEl = $("bar");
+new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", barEl.hidden ? "0px" : `${barEl.offsetHeight}px`)).observe(barEl);
+
 function updateBar(note) {
   const n = selected.size;
   $("bar").hidden = n === 0;

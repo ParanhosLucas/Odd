@@ -35,7 +35,7 @@ main{padding-bottom:90px}
 #clear,#copy,#send{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:9px 16px;font:inherit;cursor:pointer}
 #send{background:#25d366;border-color:#25d366;color:#04210f;font-weight:700}
 button.odd{font:inherit;color:inherit;cursor:pointer}
-button.odd:hover{border-color:#25d366}
+@media (hover:hover){button.odd:hover{border-color:#25d366}}
 button.odd.on{background:#25d366;border-color:#25d366}
 button.odd.on small,button.odd.on b,button.odd.on b.up,button.odd.on b.down{color:#04210f}
 button.odd:focus-visible,.pick input:focus-visible{outline:2px solid #25d366;outline-offset:2px}
@@ -49,12 +49,14 @@ button.odd:focus-visible,.pick input:focus-visible{outline:2px solid #25d366;out
 .pinicon{width:14px;height:14px;fill:currentColor;flex:none}
 #pinned{list-style:none;margin:0;padding:6px 0}
 #pinned li{display:flex;align-items:center;border-radius:8px}
-#pinned li:hover,#pinned li.on{background:var(--card)}
+#pinned li.on{background:var(--card)}
+@media (hover:hover){#pinned li:hover{background:var(--card)}}
 #pinned li.on .lg-name{font-weight:700;color:var(--brand)}
 .lg{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:0;color:inherit;font:inherit;text-align:left;padding:10px 10px;cursor:pointer}
 .lg-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .unpin{border:0;background:none;color:var(--mut);cursor:pointer;font-size:16px;padding:4px 8px;opacity:0}
-#pinned li:hover .unpin,.unpin:focus-visible{opacity:1}
+.unpin:focus-visible{opacity:1}
+@media (hover:hover){#pinned li:hover .unpin{opacity:1}}
 @media(hover:none){.unpin{opacity:.7}}
 .pin-empty{color:var(--mut);font-size:13px;padding:6px 8px}
 .flag{width:22px;height:15px;border-radius:2px;object-fit:cover;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
@@ -63,7 +65,7 @@ h2 .lh{display:flex;align-items:center;gap:8px;min-width:0}
 .pin{margin-left:auto;border:0;background:none;color:var(--mut);cursor:pointer;padding:2px 4px;border-radius:6px;line-height:0}
 .pin .pinicon{width:15px;height:15px;opacity:.5}
 .pin.on{color:var(--brand)}.pin.on .pinicon{opacity:1}
-.pin:hover .pinicon{opacity:1}
+@media (hover:hover){.pin:hover .pinicon{opacity:1}}
 #leagueNote{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px}
 #leagueNote[hidden]{display:none}
 #leagueNote button{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:3px 10px;font:inherit;cursor:pointer}
@@ -109,7 +111,7 @@ button.primary:disabled{opacity:.6;cursor:wait}
 th{text-align:left;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line)}
 button.danger{border:1px solid #f04438;color:#f04438;background:none;border-radius:8px;padding:5px 12px;font:inherit;cursor:pointer}
-button.danger:hover{background:#f04438;color:#fff}
+@media (hover:hover){button.danger:hover{background:#f04438;color:#fff}}
 
 /* Marca: logo + nome */
 .brand{display:flex;align-items:center;gap:10px;margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--fg);text-decoration:none}
@@ -124,7 +126,7 @@ h1.brand{flex:1}
 
 /* Botão de tema */
 #themeToggle{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
-#themeToggle:hover{border-color:var(--brand);color:var(--brand)}
+@media (hover:hover){#themeToggle:hover{border-color:var(--brand);color:var(--brand)}}
 #themeToggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #themeToggle .ico-sun{display:none}
 #themeToggle[data-mode="dark"] .ico-sun{display:inline}
@@ -149,5 +151,65 @@ h1.brand{flex:1}
 .loaderr button{margin-left:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 12px;font:inherit;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.skel-bar,.skel-box,.skel-pill{animation:none}}
 
-/* Desempenho: o navegador não calcula nem desenha os cartões que estão fora da tela (listas de centenas de jogos) */
-.m{content-visibility:auto;contain-intrinsic-size:auto 76px}
+/* NÃO usar content-visibility nos cartões (.m): no Safari do iPhone o cartão atualizado no lugar (ao tocar no checkbox)
+   aparecia vazio, só com a borda. O desempenho vem do desenho em partes e da atualização de um cartão só. */
+
+/* ===== Celular =====
+   No computador, #barInfo e #barActions "somem" (display:contents) e a barra é uma linha só, como antes. */
+#barInfo,#barStake,#barActions{display:contents}
+main{padding-bottom:calc(var(--bar-h,0px) + 16px)} /* o JS informa a altura real da barra: o fim da lista nunca fica coberto */
+#bar{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+@media (max-width:560px){
+  #bar{flex-direction:column;align-items:stretch;justify-content:flex-start;flex-wrap:nowrap;gap:8px;padding:10px 12px max(10px,env(safe-area-inset-bottom))}
+  #barInfo{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;font-size:13px;min-height:18px}
+  #barInfo #count{font-size:13px}#barInfo #total b{font-size:14px}
+  #minHint{flex-basis:100%;order:3}
+  #barStake{display:flex;align-items:center;gap:8px}
+  #stakeBox{flex:1;min-width:0;justify-content:space-between}
+  #stakeBox input{flex:1;width:auto;min-width:0;min-height:44px}
+  #barStake #clear{flex:none;min-height:44px}
+  #barActions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px}
+  #barActions button{min-height:46px;padding:8px 6px;font-size:14px;white-space:nowrap}
+}
+@media (max-width:340px){#barActions button{font-size:13px;padding:8px 4px}}
+/* Tela baixa (celular deitado): barra mais fina */
+@media (max-height:480px){#bar{padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom));gap:6px}#bar button{min-height:38px}}
+
+/* Botão de tema na tela de login: canto da tela (respeita o "notch" do celular) */
+.theme-corner{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:5}
+body.auth{padding:72px 16px 16px} /* o cartão nunca fica embaixo do botão de tema, nem em tela pequena */
+/* Em telas de toque o botão de tema tem o tamanho mínimo confortável para o dedo (44 px) */
+@media (pointer:coarse){#themeToggle{width:44px;height:44px}#themeToggle svg{width:20px;height:20px}}
+
+/* Celular: sem o quadrado de realce do navegador ao tocar; o próprio botão mostra que foi pressionado */
+button,a,label.pick,summary{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:active:not(:disabled){transform:scale(.96)}
+
+/* Telas de toque: todo alvo tocável com pelo menos 44 px */
+@media (pointer:coarse){
+  #account{gap:6px}
+  #account a,#logout{display:inline-flex;align-items:center;min-height:44px;padding:0 10px}
+  #days button{width:44px;height:44px}
+  .unpin{min-width:44px;min-height:44px;opacity:.7}
+  .lg{min-height:44px}
+  .pin{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0;margin:-14px -10px -14px 0}
+  #q{min-height:44px}
+  .pick{padding:10px;margin:-10px}
+  .pick input{width:24px;height:24px}
+  #who{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+
+/* iPhone: campos com fonte menor que 16 px fazem o Safari dar zoom na página ao tocar */
+@media (pointer:coarse){input,select,textarea{font-size:16px}}
+
+/* Celular: o cabeçalho vira duas linhas. 1ª: marca + botão de tema. 2ª: usuário, Usuários e Sair. */
+@media (max-width:560px){
+  .top{flex-wrap:wrap;gap:4px 8px}
+  .top::after{content:"";flex-basis:100%;height:0;order:1}
+  h1.brand{flex:1 1 auto;min-width:0;white-space:nowrap;font-size:22px}
+  #account{display:contents}
+  #themeToggle{order:0;margin-left:auto}
+  #who{order:2;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:none}
+  #adminLink,#logout{order:2}
+  #account a[hidden]{display:none}
+}
