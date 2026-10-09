@@ -48,6 +48,7 @@ TEST_DATABASE_URL=postgres://usuario@127.0.0.1:5432/banco_de_teste npm test   # 
 | `POST /api/login` · `POST /api/logout` · `GET /api/me` | Login (`{ username, password }`), logout e usuário atual. |
 | `GET/POST /api/admin/users` · `DELETE /api/admin/users/:id` | Listar, criar e excluir usuários (só administrador). |
 | `POST /api/history` · `GET /api/history?limit&before` | Grava eventos da aposta do usuário logado / lista o PRÓPRIO histórico (mais novo primeiro, paginado por `before=<id>`). |
+| `GET /api/admin/history/backup` · `GET /api/admin/history/export?format=csv\|json` | Situação do backup automático / baixar o histórico inteiro (só administrador). |
 | `GET /api/admin/history?username&limit&before` | Histórico de todos os usuários, com filtro por usuário (só administrador). |
 
 Tudo em `/api/*` (exceto `login` e `/healthz`) exige login: `401` sem sessão, `403` sem ser administrador, `503` se o banco estiver fora.
@@ -74,6 +75,16 @@ Limites que vale conhecer:
 - "Enviada" significa que o botão do WhatsApp foi clicado: o WhatsApp não confirma a entrega.
 - Sem internet, os eventos ficam numa fila no navegador e são reenviados depois. Mudanças feitas com valor sendo digitado são agrupadas (~1 s) num evento só.
 - Alterar uma aposta **depois de enviada ou copiada** cria uma aposta nova (novo registro), como no número de registro.
+
+### Backup automático do histórico
+
+Defina `BACKUP_DATABASE_URL` (um **segundo** banco Postgres, de preferência de **outro projeto/conta do Neon**; precisa ser diferente de `DATABASE_URL`). A cada gravação no histórico — aposta criada/alterada/enviada/copiada, usuário criado/excluído — os mesmos eventos são copiados para a tabela `bet_events_backup` desse banco, em segundo plano (nunca atrasa nem derruba o site).
+
+- Se o banco de backup estiver fora do ar/dormindo, os eventos ficam numa fila e são tentados de novo (2 s, 4 s … até 5 min). Ao reiniciar, o servidor compara os dois bancos e copia o que faltar.
+- Copiar é idempotente (chave: id + horário): nada é gravado duas vezes, e recriar o banco principal não confunde eventos novos com antigos.
+- Na aba Histórico, o administrador vê a situação do backup (ligado, nº de eventos, última cópia, problemas) e pode **baixar tudo** em CSV (abre no Excel) ou JSON — `GET /api/admin/history/export?format=csv|json`.
+- Sem a variável, o painel avisa "Backup automático DESLIGADO" e nada é copiado.
+- O backup protege contra perda/corrupção do banco principal. **Não** protege se as DUAS URLs apontarem para o mesmo projeto/conta e ele for apagado: use projetos separados.
 
 ## Desempenho (trocar de dia sem "Carregando…")
 

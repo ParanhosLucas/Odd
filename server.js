@@ -5,6 +5,7 @@ import { createApp } from "./lib/app.js";
 import { createAuth } from "./lib/auth.js";
 import { loadConfig } from "./lib/config.js";
 import { createPgPool } from "./lib/pg-pool.js";
+import { createHistoryBackup, createNoBackup, createPgBackupTarget } from "./lib/history-backup.js";
 import { createMemoryStore, createPgStore } from "./lib/users-store.js";
 import { fetchFlashscore } from "./providers/flashscore.js";
 import { fetchDemo } from "./providers/demo.js";
@@ -23,8 +24,21 @@ if (config.databaseUrl) {
   store = createMemoryStore();
 }
 
+// Backup automático do histórico num segundo banco (opcional, mas recomendado em produção).
+let backupPool = null, backup = createNoBackup();
+if (config.backupDatabaseUrl) {
+  if (config.backupDatabaseUrl === config.databaseUrl) {
+    console.error("BACKUP_DATABASE_URL é igual a DATABASE_URL: isso não é um backup. Use outro banco. Backup DESLIGADO.");
+  } else {
+    backupPool = createPgPool({ connectionString: config.backupDatabaseUrl, ssl: config.databaseSsl });
+    backup = createHistoryBackup({ source: store, target: createPgBackupTarget(backupPool) });
+  }
+} else if (config.production) {
+  console.warn("BACKUP_DATABASE_URL não definida: o histórico NÃO está sendo copiado para um segundo banco.");
+}
+
 const app = createApp({
-  config, store,
+  config, store, backup,
   fetchLeagues: fetchFlashscore,
   fetchFallback: fetchDemo,
   publicDir: join(fileURLToPath(new URL(".", import.meta.url)), "public"),
@@ -45,6 +59,7 @@ const auth = createAuth({ store, config });
       await store.init();
       await auth.ensureAdmin();
       console.log("Banco de usuários pronto.");
+      backup.start().catch((e) => console.error("Backup do histórico:", e.message)); // copia o atraso e passa a copiar a cada alteração
       return;
     } catch (e) {
       console.error(`Banco indisponível (tentativa ${attempt}): ${e.message}`);
@@ -57,5 +72,5 @@ const auth = createAuth({ store, config });
 setInterval(() => auth.purgeExpired().catch((e) => console.error("Falha ao limpar sessões:", e.message)), 3_600_000).unref();
 
 for (const sig of ["SIGTERM", "SIGINT"]) {
-  process.on(sig, () => server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); }));
+  process.on(sig, () => server.close(async () => { backup.stop(); await pool?.end().catch(() => {}); await backupPool?.end().catch(() => {}); process.exit(0); }));
 }

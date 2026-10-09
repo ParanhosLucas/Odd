@@ -264,3 +264,8 @@ body.histpage header{padding-bottom:0}
 }
 @media (pointer:coarse){.msg summary{min-height:44px}.slip>summary{min-height:48px}}
 .loadmore[hidden]{display:none}
+.backupbox{margin:0 0 14px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px}
+.backupbox p{margin:2px 0}.backup-ok{color:#12b76a}.backup-bad{color:#f04438}.backup-off{color:var(--warn)}
+.backuplinks a{color:var(--brand);display:inline-flex;align-items:center;min-height:32px}
+@media (pointer:coarse){.backuplinks a{min-height:44px;padding:0 4px}}
+.backupbox[hidden]{display:none}

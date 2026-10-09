@@ -19,6 +19,20 @@ if (isAdmin) {
   $("histTitle").textContent = "Seu histórico de apostas";
 }
 
+// Administrador: situação do backup automático (segundo banco) e links para baixar o histórico.
+async function loadBackup() {
+  const r = await fetch("/api/admin/history/backup").then((x) => (x.ok ? x.json() : null)).catch(() => null);
+  if (!r) return;
+  const box = $("backupStatus");
+  $("backupBox").hidden = false;
+  if (!r.enabled) { box.textContent = "Backup automático DESLIGADO: defina BACKUP_DATABASE_URL (outro banco) no Render para copiar o histórico a cada alteração."; box.className = "backup-off"; return; }
+  const when = r.lastOkAt ? ` Última cópia: ${formatDateTime(r.lastOkAt)}.` : "";
+  if (r.lastError) { box.textContent = `Backup com problema: ${r.pending} evento(s) aguardando nova tentativa.${when}`; box.className = "backup-bad"; }
+  else if (!r.ready) { box.textContent = "Backup iniciando…"; box.className = "backup-off"; }
+  else { box.textContent = `Backup automático ligado: ${r.backedUp ?? "?"} evento(s) copiados${r.pending ? `, ${r.pending} em andamento` : ""}.${when}`; box.className = "backup-ok"; }
+}
+if (isAdmin) { loadBackup(); setInterval(loadBackup, 30_000); }
+
 let events = [], hasMore = false, filter = "", loading = false;
 
 const el = (tag, props = {}, ...kids) => {

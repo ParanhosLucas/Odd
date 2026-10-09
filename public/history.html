@@ -35,6 +35,10 @@
     </label>
   </div>
   <p class="hint" id="histHint">Cada aposta mostra a data e a hora de tudo o que foi feito nela. Os horários são os do servidor (Brasília).</p>
+  <section id="backupBox" class="backupbox" hidden>
+    <p id="backupStatus" role="status"></p>
+    <p class="backuplinks">Baixar tudo: <a href="/api/admin/history/export?format=csv" download>Planilha (CSV)</a> · <a href="/api/admin/history/export?format=json" download>JSON</a></p>
+  </section>
   <p id="histMsg" role="status" hidden></p>
   <div id="slips"></div>
   <section id="adminSection" hidden>
