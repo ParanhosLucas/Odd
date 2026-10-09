@@ -1,5 +1,5 @@
 import { scopedStorage } from "/scoped-storage.js";
-import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
+import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
@@ -93,6 +93,12 @@ function updateBar(note) {
   const n = selected.size;
   $("bar").hidden = n === 0;
   $("count").textContent = note || `${n} jogo${n === 1 ? "" : "s"} selecionado${n === 1 ? "" : "s"}`;
+  // Enviar e copiar (que serve só para colar no WhatsApp) exigem o mínimo de jogos.
+  const ok = canSend(n);
+  $("send").disabled = !ok;
+  $("copy").disabled = !ok;
+  $("minHint").hidden = n === 0 || ok;
+  $("minHint").textContent = n === 0 || ok ? "" : minGamesHint(n);
   const total = stakeCents ? totalReturnCents([...selected.values()], stakeCents) : 0;
   $("total").hidden = !total;
   $("total").innerHTML = total ? `Retorno Total: <b>${formatBRL(total)}</b>` : "";
@@ -233,7 +239,7 @@ $("stake").addEventListener("input", (e) => {
 try { $("stake").value = store.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
 
 $("send").onclick = () => {
-  if (!selected.size) return;
+  if (!canSend(selected.size)) return; // o botão já fica desativado; isto cobre qualquer caminho que o ative
   const items = [...selected.values()];
   // Sem emojis: a página wa.me do WhatsApp os exibe como "�". Para ter emojis, use "Copiar mensagem".
   const options = { emojis: false, stakeCents };
@@ -247,7 +253,7 @@ $("send").onclick = () => {
   updateBar();
 };
 $("copy").onclick = async () => {
-  if (!selected.size) return;
+  if (!canSend(selected.size)) return;
   const items = [...selected.values()];
   const number = register(store, slipKey(items, stakeCents));
   const text = buildMessage(items, { stakeCents, registration: number });

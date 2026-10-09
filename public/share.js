@@ -3,6 +3,14 @@
 // para o botão "Copiar mensagem", que cola o texto direto no WhatsApp sem passar pelo link.
 // Monta a mensagem de WhatsApp com os jogos selecionados e o link wa.me.
 export const MAX_SELECTED = 30;
+export const MIN_GAMES_TO_SEND = 2; // só dá para enviar/copiar com pelo menos 2 jogos selecionados
+
+// n = quantidade de jogos selecionados (jogos, não odds escolhidas)
+export const canSend = (n) => n >= MIN_GAMES_TO_SEND;
+export const minGamesHint = (n) => {
+  const falta = MIN_GAMES_TO_SEND - n;
+  return `Selecione pelo menos ${MIN_GAMES_TO_SEND} jogos para enviar (falta${falta > 1 ? "m" : ""} ${falta})`;
+};
 export const MAX_LINK_LENGTH = 7500; // servidores costumam recusar URLs acima de ~8 mil caracteres
 
 export const OUTCOMES = [["home", "Casa"], ["draw", "Empate"], ["away", "Fora"]];
