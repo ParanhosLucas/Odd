@@ -3,7 +3,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px;max-width:1140px;margin:auto}
-h1{font-size:20px;margin:0;flex:1 1 100%}
+h1{font-size:20px;margin:0;flex:1}
 #q{flex:1;min-width:200px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
 #status{color:var(--mut);font-size:13px}
 #banner{max-width:1108px;margin:0 16px 12px;padding:10px 12px;border-radius:8px;background:#5a3a00;color:#ffd9a0;font-size:13px}
@@ -76,3 +76,35 @@ button.odd.on .ret{color:#04210f}
 #total[hidden]{display:none}
 #reg{font-size:14px;color:var(--mut)}#reg b{color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 #reg[hidden]{display:none}
+
+/* Conta no cabeçalho */
+.top{display:flex;align-items:center;gap:12px;flex:1 1 100%}
+#account{display:flex;align-items:center;gap:10px;font-size:13px}
+#who{font-weight:600}
+#account a{color:var(--acc);text-decoration:none}#account a[hidden]{display:none}
+#logout{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:5px 12px;font:inherit;cursor:pointer}
+
+/* Telas de login e administração */
+body.auth{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;width:100%}
+body.auth .card{max-width:380px}
+.card h1{flex:none;margin-bottom:4px}.card h2{font-size:16px;margin:0 0 12px}
+.sub,.hint{color:var(--mut);font-size:13px;margin:4px 0 14px}.hint{margin:14px 0 0}
+form label{display:block;font-size:13px;font-weight:600;margin-bottom:12px}
+form input,form select{display:block;width:100%;margin-top:4px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-weight:400}
+button.primary{width:100%;padding:11px;border:0;border-radius:8px;background:var(--acc);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.primary:disabled{opacity:.6;cursor:wait}
+.error{color:#f04438;font-size:13px;margin:0 0 12px}.ok{color:#12b76a;font-size:13px}
+.error[hidden],.ok[hidden],#msg[hidden]{display:none}
+.adminbar{display:flex;align-items:center;gap:16px;max-width:900px;margin:auto;padding:16px}
+.adminbar h1{flex:1}.adminbar a{color:var(--acc);text-decoration:none;font-size:14px}
+.adminbar button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+.adminmain{max-width:900px;margin:auto;padding:0 16px 40px;display:grid;gap:16px}
+.adminmain #create{display:grid;grid-template-columns:1fr 1fr 160px auto;gap:12px;align-items:end}
+.adminmain #create label{margin:0}.adminmain #create button.primary{width:auto;padding:10px 22px}
+@media(max-width:700px){.adminmain #create{grid-template-columns:1fr}.adminmain #create button.primary{width:100%}}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line)}
+button.danger{border:1px solid #f04438;color:#f04438;background:none;border-radius:8px;padding:5px 12px;font:inherit;cursor:pointer}
+button.danger:hover{background:#f04438;color:#fff}

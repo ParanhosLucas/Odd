@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · Odds Futebol</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="auth">
+<main class="card">
+  <h1>⚽ Odds · Futebol</h1>
+  <p class="sub">Entre com o seu usuário e senha.</p>
+  <form id="form">
+    <label>Usuário
+      <input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+    </label>
+    <label>Senha
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <p id="error" class="error" role="alert" hidden></p>
+    <button type="submit" class="primary">Entrar</button>
+  </form>
+  <p class="hint">Não tem acesso? Peça a um administrador para criar o seu usuário.</p>
+</main>
+<script type="module" src="/login.js"></script>
+</body>
+</html>

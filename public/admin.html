@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usuários · Odds Futebol</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="admin">
+<header class="adminbar">
+  <h1>Usuários</h1>
+  <a href="/">← Voltar às odds</a>
+  <button id="logout" type="button">Sair</button>
+</header>
+<main class="adminmain">
+  <section class="card">
+    <h2>Criar usuário</h2>
+    <form id="create">
+      <label>Usuário <input name="username" autocomplete="off" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="32"></label>
+      <label>Senha <input name="password" type="text" autocomplete="off" required minlength="8" maxlength="128"></label>
+      <label>Perfil
+        <select name="role"><option value="user">Usuário</option><option value="admin">Administrador</option></select>
+      </label>
+      <button type="submit" class="primary">Criar</button>
+    </form>
+    <p class="hint">Usuário: 3 a 32 caracteres (letras minúsculas, números, ponto, hífen ou _). Senha: mínimo 8. Anote a senha e entregue ao usuário: ela não pode ser consultada depois.</p>
+    <p id="msg" role="status" hidden></p>
+  </section>
+  <section class="card">
+    <h2>Usuários cadastrados</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Usuário</th><th>Perfil</th><th>Criado em</th><th></th></tr></thead>
+        <tbody id="users"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script type="module" src="/admin.js"></script>
+</body>
+</html>

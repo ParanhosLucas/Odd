@@ -1,13 +1,19 @@
 {
   "name": "odd",
   "version": "0.1.0",
-  "description": "Espelho das odds de futebol (1X2) com provedor Betano configurável",
+  "description": "Odds de futebol (1X2) do Flashscore, com login, usuários e envio por WhatsApp",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "test": "node --test"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.14"
   }
 }

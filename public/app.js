@@ -1,12 +1,24 @@
+import { scopedStorage } from "/scoped-storage.js";
 import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
 import { leagueId, loadPinned, savePinned, toPinned, togglePinned } from "/leagues.js";
 
 const $ = (id) => document.getElementById(id);
+
+// Quem está logado? Sem sessão, volta para o login. Os dados do navegador são guardados por usuário.
+const me = await fetch("/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+if (!me) { location.replace("/login.html"); await new Promise(() => {}); }
+const store = scopedStorage(localStorage, me.username);
+$("who").textContent = me.username;
+$("adminLink").hidden = me.role !== "admin";
+$("logout").onclick = async () => {
+  await fetch("/api/logout", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }).catch(() => {});
+  location.replace("/login.html");
+};
 let data = null, day = 0;
 
-let pinned = loadPinned(localStorage);   // ligas fixadas: [{ id, title, country }]
+let pinned = loadPinned(store);   // ligas fixadas: [{ id, title, country }]
 let leagueFilter = null;                 // id da liga escolhida no menu (ou null = todas)
 
 const PIN_SVG = '<svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 1.2 14.8 6.2 13.4 7.6l-1-.4-2.3 2.3.2 2.6-1.1 1.1-2.6-2.6-3.9 3.9-.7-.7 3.9-3.9L2.3 7.3l1.1-1.1 2.6.2 2.3-2.3-.4-1z"/></svg>';
@@ -15,11 +27,11 @@ const PIN_SVG = '<svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><pa
 // picks = odds escolhidas ("home"/"draw"/"away"); vazio = as três vão na mensagem.
 const selected = new Map();
 const STORE = "odd.selected";
-try { for (const it of JSON.parse(localStorage.getItem(STORE) || "[]")) selected.set(it.match.id, { picks: [], ...it }); } catch {}
+try { for (const it of JSON.parse(store.getItem(STORE) || "[]")) selected.set(it.match.id, { picks: [], ...it }); } catch {}
 // Valor da aposta (em centavos); o texto digitado fica guardado para reaparecer ao recarregar.
 const STAKE_KEY = "odd.stake";
 let stakeCents = null;
-const persist = () => { try { localStorage.setItem(STORE, JSON.stringify([...selected.values()])); } catch {} };
+const persist = () => { try { store.setItem(STORE, JSON.stringify([...selected.values()])); } catch {} };
 
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -85,7 +97,7 @@ function updateBar(note) {
   $("total").hidden = !total;
   $("total").innerHTML = total ? `Retorno Total: <b>${formatBRL(total)}</b>` : "";
   // Mostra o registro enquanto o cupom for o mesmo que foi enviado/copiado; mudou algo, some.
-  const reg = n ? currentRegistration(localStorage, slipKey([...selected.values()], stakeCents)) : null;
+  const reg = n ? currentRegistration(store, slipKey([...selected.values()], stakeCents)) : null;
   $("reg").hidden = !reg;
   $("reg").innerHTML = reg ? `Registro: <b>${reg}</b>` : "";
 }
@@ -160,6 +172,7 @@ function setDay(d) {
 async function load() {
   try {
     const res = await fetch(`/api/odds?day=${day}`);
+    if (res.status === 401) return void location.replace("/login.html"); // sessão expirou ou foi encerrada
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
     const next = await res.json();
     if (next.day !== day) return; // resposta de um dia que já não está selecionado
@@ -186,7 +199,7 @@ $("list").addEventListener("click", (e) => {
   const pin = e.target.closest("button.pin");
   if (pin) {
     pinned = togglePinned(pinned, { id: pin.dataset.pin, title: pin.dataset.title, country: pin.dataset.country || null });
-    savePinned(localStorage, pinned);
+    savePinned(store, pinned);
     render();
   }
 });
@@ -197,7 +210,7 @@ $("pinnedBox").addEventListener("click", (e) => {
   if (un) {
     pinned = pinned.filter((p) => p.id !== un.dataset.unpin);
     if (leagueFilter === un.dataset.unpin) leagueFilter = null;
-    savePinned(localStorage, pinned);
+    savePinned(store, pinned);
     return render();
   }
   const lg = e.target.closest("[data-lg]");
@@ -214,10 +227,10 @@ $("clear").onclick = () => { selected.clear(); persist(); render(); };
 $("stake").addEventListener("input", (e) => {
   stakeCents = parseStake(e.target.value);
   e.target.classList.toggle("bad", e.target.value.trim() !== "" && stakeCents === null);
-  try { localStorage.setItem(STAKE_KEY, e.target.value); } catch {}
+  try { store.setItem(STAKE_KEY, e.target.value); } catch {}
   render();
 });
-try { $("stake").value = localStorage.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
+try { $("stake").value = store.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}
 
 $("send").onclick = () => {
   if (!selected.size) return;
@@ -229,14 +242,14 @@ $("send").onclick = () => {
     updateBar("Mensagem grande demais para o link: use “Copiar mensagem” ou selecione menos jogos.");
     return void setTimeout(() => updateBar(), 5000);
   }
-  const number = register(localStorage, slipKey(items, stakeCents));
+  const number = register(store, slipKey(items, stakeCents));
   window.open(whatsappUrl(buildMessage(items, { ...options, registration: number })), "_blank", "noopener");
   updateBar();
 };
 $("copy").onclick = async () => {
   if (!selected.size) return;
   const items = [...selected.values()];
-  const number = register(localStorage, slipKey(items, stakeCents));
+  const number = register(store, slipKey(items, stakeCents));
   const text = buildMessage(items, { stakeCents, registration: number });
   try {
     await navigator.clipboard.writeText(text);
