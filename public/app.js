@@ -27,6 +27,8 @@ const history = createTracker({
       .then((r) => ({ ok: r.ok, status: r.status }))
       .catch(() => ({ ok: false, status: 0 })),
 });
+// Versão publicada (commit): confirma qual código o servidor está rodando.
+fetch("/healthz", { cache: "no-store" }).then((r) => r.json()).then((h) => { $("ver").textContent = `Versão ${h.version}`; }).catch(() => {});
 let data = null, day = 0;
 let matchIndex = new Map(); // id do jogo -> { m, leagueName } (busca instantânea; evita varrer a lista toda)
 function setData(next) {

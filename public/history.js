@@ -33,6 +33,8 @@ async function loadBackup() {
 }
 if (isAdmin) { loadBackup(); setInterval(loadBackup, 30_000); }
 
+// Versão publicada (commit): confirma qual código o servidor está rodando.
+fetch("/healthz", { cache: "no-store" }).then((r) => r.json()).then((h) => { $("ver").textContent = `Versão ${h.version}`; }).catch(() => {});
 let events = [], hasMore = false, filter = "", loading = false;
 
 const el = (tag, props = {}, ...kids) => {

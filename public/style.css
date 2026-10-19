@@ -267,3 +267,5 @@ body.histpage header{padding-bottom:0}
 .backuplinks a{color:var(--brand);display:inline-flex;align-items:center;min-height:32px}
 @media (pointer:coarse){.backuplinks a{min-height:44px;padding:0 4px}}
 .backupbox[hidden]{display:none}
+.ver{max-width:1140px;margin:8px auto 0;padding:0 16px;color:var(--mut);font-size:11px;text-align:right;min-height:14px}
+main.histmain+.ver{margin-bottom:16px}
