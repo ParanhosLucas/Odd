@@ -147,7 +147,7 @@ function updateBar(note) {
   $("copy").disabled = !ok;
   $("minHint").hidden = n === 0 || ok;
   $("minHint").textContent = n === 0 || ok ? "" : minGamesHint(n);
-  const oddTotal = totalOddText([...selected.values()]); // multiplicação das odds escolhidas, 1 casa (cortada)
+  const oddTotal = totalOddText([...selected.values()]); // multiplicação das odds escolhidas, 2 casas (cortadas)
   $("oddTotal").hidden = !oddTotal;
   $("oddTotal").innerHTML = oddTotal ? `Odd total: <b>${oddTotal}</b>` : "";
   const total = stakeCents ? totalReturnCents([...selected.values()], stakeCents) : 0;

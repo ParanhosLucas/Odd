@@ -66,8 +66,8 @@ export function totalReturnCents(items, stakeCents) {
   return total;
 }
 
-// Odd total: multiplicação de todas as odds ESCOLHIDAS (ex.: 1,53 × 3,13 = 4,7889). Mostra só UMA casa decimal,
-// CORTANDO (sem arredondar): 4,7889 -> "4,7". Conta exata com inteiros (odds em centésimos), sem erro de ponto flutuante.
+// Odd total: multiplicação de todas as odds ESCOLHIDAS (ex.: 1,53 × 3,13 = 4,7889). Mostra DUAS casas decimais,
+// CORTANDO (sem arredondar): 4,7889 -> "4,78". Conta exata com inteiros (odds em centésimos), sem erro de ponto flutuante.
 // Devolve null se não houver odd escolhida (ou se alguma escolhida ainda não tiver valor).
 export function totalOddText(items) {
   let num = 1n, den = 1n, n = 0;
@@ -82,8 +82,8 @@ export function totalOddText(items) {
     }
   }
   if (!n) return null;
-  const tenths = (num * 10n) / den;
-  return `${tenths / 10n},${tenths % 10n}`;
+  const cents = (num * 100n) / den;
+  return `${cents / 100n},${String(cents % 100n).padStart(2, "0")}`;
 }
 
 // items: [{ league, match, picks? }]; picks = subconjunto de ["home","draw","away"] (vazio/ausente = as três). Agrupa por campeonato; campeonatos e jogos em ordem de horário.
