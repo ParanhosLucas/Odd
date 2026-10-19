@@ -1,7 +1,7 @@
 import { scopedStorage } from "/scoped-storage.js";
 import { createDayCache } from "/day-cache.js";
 import { createProgressiveRenderer } from "/progressive.js";
-import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
+import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, totalOddText, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
 import { createTracker } from "/history-tracker.js";
@@ -147,6 +147,9 @@ function updateBar(note) {
   $("copy").disabled = !ok;
   $("minHint").hidden = n === 0 || ok;
   $("minHint").textContent = n === 0 || ok ? "" : minGamesHint(n);
+  const oddTotal = totalOddText([...selected.values()]); // multiplicação das odds escolhidas, 1 casa (cortada)
+  $("oddTotal").hidden = !oddTotal;
+  $("oddTotal").innerHTML = oddTotal ? `Odd total: <b>${oddTotal}</b>` : "";
   const total = stakeCents ? totalReturnCents([...selected.values()], stakeCents) : 0;
   $("total").hidden = !total;
   $("total").innerHTML = total ? `Retorno Total: <b>${formatBRL(total)}</b>` : "";
