@@ -1,7 +1,7 @@
 import { scopedStorage } from "/scoped-storage.js";
 import { createDayCache } from "/day-cache.js";
 import { createProgressiveRenderer } from "/progressive.js";
-import { buildMessage, whatsappUrl, parseStake, formatBRL, payoutCents, totalReturnCents, totalOddText, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
+import { buildMessage, whatsappUrl, parseStake, formatBRL, totalReturnCents, totalOddText, canSend, minGamesHint, MAX_SELECTED, MAX_LINK_LENGTH } from "/share.js";
 import { COUNTRY_FLAG } from "/countries.js";
 import { register, currentRegistration, slipKey } from "/register.js";
 import { createTracker } from "/history-tracker.js";
@@ -66,9 +66,7 @@ function cell(label, key, m) {
   const arrow = cls === "up" ? "↑ " : cls === "down" ? "↓ " : "";
   const item = selected.get(m.id);
   const on = item?.picks.includes(key);
-  // Retorno (aposta × odd) só nas odds que você escolheu (clicou); marcar apenas o jogo não calcula nada.
-  const ret = stakeCents && on ? `<em class="ret">${formatBRL(payoutCents(stakeCents, v))}</em>` : "";
-  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b>${ret}</button>`;
+  return `<button type="button" class="odd${on ? " on" : ""}" data-id="${esc(m.id)}" data-key="${key}" aria-pressed="${on ? "true" : "false"}" title="Escolher esta odd"><small>${label}</small><b class="${cls}">${arrow}${v.toFixed(2)}</b></button>`;
 }
 
 function flag(country) {
@@ -131,7 +129,6 @@ function replaceCard(id, focusSelector) {
   el.outerHTML = cardHtml(hit.m);
   if (focusSelector) cardElement(id)?.querySelector(focusSelector)?.focus(); // quem usa teclado não perde o foco
 }
-const refreshSelectedCards = () => { for (const id of selected.keys()) replaceCard(id); };
 
 // A página reserva no fim exatamente a altura da barra (muda com o tamanho da tela, avisos e quebras de linha).
 const barEl = $("bar");
@@ -337,7 +334,6 @@ $("stake").addEventListener("input", (e) => {
   e.target.classList.toggle("bad", e.target.value.trim() !== "" && stakeCents === null);
   try { store.setItem(STAKE_KEY, e.target.value); } catch {}
   trackSlip();
-  refreshSelectedCards(); // só os cartões selecionados mostram retorno
   updateBar();
 });
 try { $("stake").value = store.getItem(STAKE_KEY) || ""; stakeCents = parseStake($("stake").value); } catch {}

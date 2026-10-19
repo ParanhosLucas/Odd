@@ -39,7 +39,6 @@ export function formatBRL(cents) {
 }
 
 // Retorno total (aposta × odd), em centavos, arredondado ao centavo mais próximo.
-export const payoutCents = (stakeCents, oddValue) => Math.round(stakeCents * oddValue);
 
 const when = (iso) =>
   iso
@@ -51,28 +50,13 @@ const when = (iso) =>
 // Odds que entram na mensagem para um item: as escolhidas (picks) ou, sem escolha, as três.
 const listedOutcomes = ({ picks }) => OUTCOMES.filter(([k]) => !picks?.length || picks.includes(k));
 
-// Soma dos retornos das odds ESCOLHIDAS (picks). Jogo marcado sem escolher odd não entra na soma.
-// Soma os valores já arredondados ao centavo, para o total bater com as linhas "(retorno: ...)".
-export function totalReturnCents(items, stakeCents) {
-  if (!stakeCents) return 0;
-  let total = 0;
-  for (const it of items) {
-    if (!it.picks?.length) continue;
-    for (const [k] of listedOutcomes(it)) {
-      const v = it.match.odds?.[k];
-      if (v != null) total += payoutCents(stakeCents, v);
-    }
-  }
-  return total;
-}
-
-// Odd total: multiplicação de todas as odds ESCOLHIDAS (ex.: 1,53 × 3,13 = 4,7889). Mostra DUAS casas decimais,
-// CORTANDO (sem arredondar): 4,7889 -> "4,78". Conta exata com inteiros (odds em centésimos), sem erro de ponto flutuante.
-// Devolve null se não houver odd escolhida (ou se alguma escolhida ainda não tiver valor).
-export function totalOddText(items) {
+// Aposta MÚLTIPLA: uma só aposta vale pelos jogos juntos, então as odds ESCOLHIDAS se multiplicam.
+// Frações exatas (odds em centésimos, BigInt), sem erro de ponto flutuante.
+// Devolve { num, den } (produto = num/den) ou null se não houver odd escolhida (ou se alguma não tiver valor).
+function oddProduct(items) {
   let num = 1n, den = 1n, n = 0;
   for (const it of items) {
-    if (!it.picks?.length) continue;
+    if (!it.picks?.length) continue; // jogo marcado sem escolher odd não entra
     for (const [k] of listedOutcomes(it)) {
       const v = it.match.odds?.[k];
       if (v == null) return null;
@@ -81,8 +65,23 @@ export function totalOddText(items) {
       n++;
     }
   }
-  if (!n) return null;
-  const cents = (num * 100n) / den;
+  return n ? { num, den } : null;
+}
+
+// Retorno Total = aposta × Odd total (do produto EXATO, não do número cortado na tela), arredondado ao centavo.
+// Ex.: R$ 10 × (1,53 × 3,14 = 4,8042) = R$ 48,04.
+export function totalReturnCents(items, stakeCents) {
+  const p = stakeCents ? oddProduct(items) : null;
+  if (!p) return 0;
+  const x = BigInt(stakeCents) * p.num;
+  return Number((2n * x + p.den) / (2n * p.den)); // divisão arredondando à metade para cima
+}
+
+// Odd total (para mostrar): o mesmo produto com DUAS casas decimais, CORTANDO (sem arredondar): 4,8042 -> "4,80".
+export function totalOddText(items) {
+  const p = oddProduct(items);
+  if (!p) return null;
+  const cents = (p.num * 100n) / p.den;
   return `${cents / 100n},${String(cents % 100n).padStart(2, "0")}`;
 }
 
@@ -101,16 +100,7 @@ export function buildMessage(items, { emojis = true, stakeCents = null, registra
       const o = m.odds || {};
       const keys = listedOutcomes({ picks });
       lines.push(`${m.home} × ${m.away}`);
-      if (stakeCents && picks?.length) {
-        // Odds escolhidas + valor de aposta: uma odd por linha, com o retorno de cada uma.
-        if (when(m.startTime)) lines.push(when(m.startTime));
-        for (const [k, label] of keys) {
-          const ret = o[k] == null ? "" : ` (retorno: ${formatBRL(payoutCents(stakeCents, o[k]))})`;
-          lines.push(`*${label}*: ${odd(o[k])}${ret}`);
-        }
-      } else {
-        lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `*${label}*: ${odd(o[k])}`).join(" | ")}`);
-      }
+      lines.push(`${when(m.startTime) ? when(m.startTime) + " · " : ""}${keys.map(([k, label]) => `*${label}*: ${odd(o[k])}`).join(" | ")}`);
     }
   }
   const oddTotal = totalOddText(items);
