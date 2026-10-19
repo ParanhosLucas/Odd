@@ -46,7 +46,8 @@ const PIN_SVG = '<svg class="pinicon" viewBox="0 0 16 16" aria-hidden="true"><pa
 // picks = odds escolhidas ("home"/"draw"/"away"); vazio = as três vão na mensagem.
 const selected = new Map();
 const STORE = "odd.selected";
-try { for (const it of JSON.parse(store.getItem(STORE) || "[]")) selected.set(it.match.id, { picks: [], ...it }); } catch {}
+// Jogo só fica selecionado se tiver odd escolhida (Casa, Empate ou Fora).
+try { for (const it of JSON.parse(store.getItem(STORE) || "[]")) if (it.picks?.length) selected.set(it.match.id, { ...it }); } catch {}
 // Valor da aposta (em centavos); o texto digitado fica guardado para reaparecer ao recarregar.
 const STAKE_KEY = "odd.stake";
 let stakeCents = null;
@@ -97,7 +98,7 @@ function headerHtml(l) {
 function cardHtml(m) {
   const sel = selected.has(m.id);
   return `<div class="m${sel ? " sel" : ""}">
-        <label class="pick" title="Selecionar jogo"><input type="checkbox" data-id="${esc(m.id)}"${sel ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
+        <label class="pick" title="${sel ? "Desmarcar jogo" : "Escolha Casa, Empate ou Fora para selecionar o jogo"}"><input type="checkbox" data-id="${esc(m.id)}"${sel ? " checked" : ""} aria-label="Selecionar ${esc(m.home)} × ${esc(m.away)}"></label>
         <div><div class="t">${esc(m.home)} × ${esc(m.away)}</div><div class="when">${fmtTime(m.startTime)}</div></div>
         <div class="o">${cell("Casa", "home", m)}${cell("Empate", "draw", m)}${cell("Fora", "away", m)}</div>
       </div>`;
@@ -174,16 +175,33 @@ function togglePick(btn) {
   const item = ensureSelected(id);
   if (!item) return;
   item.picks = item.picks.includes(key) ? item.picks.filter((k) => k !== key) : [...item.picks, key];
+  if (!item.picks.length) selected.delete(id); // tirou a última odd: o jogo deixa de estar selecionado
   persist();
   trackSlip();
   replaceCard(id, `[data-key="${key}"]`);
   updateBar();
 }
 
+// Aviso rápido (some sozinho) acima da barra.
+let toastTimer;
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+// A caixinha só fica marcada porque uma odd (Casa, Empate ou Fora) foi escolhida: não dá para marcá-la sozinha.
+// Desmarcar tira o jogo (e as odds escolhidas) da seleção.
 function toggle(input) {
   const id = input.dataset.id;
-  if (!input.checked) selected.delete(id);
-  else if (!ensureSelected(id)) { input.checked = false; return; }
+  if (input.checked) {
+    input.checked = false;
+    toast("Escolha Casa, Empate ou Fora para selecionar o jogo");
+    return;
+  }
+  selected.delete(id);
   persist();
   trackSlip();
   replaceCard(id, ".pick input");

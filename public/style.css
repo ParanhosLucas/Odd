@@ -269,3 +269,5 @@ body.histpage header{padding-bottom:0}
 .backupbox[hidden]{display:none}
 .ver{max-width:1140px;margin:8px auto 0;padding:0 16px;color:var(--mut);font-size:11px;text-align:right;min-height:14px}
 main.histmain+.ver{margin-bottom:16px}
+#toast{position:fixed;left:50%;bottom:calc(var(--bar-h,0px) + 14px);transform:translateX(-50%);z-index:20;max-width:min(92vw,420px);padding:10px 16px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:600;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+#toast[hidden]{display:none}
